@@ -1,61 +1,65 @@
-# Theming & Customization
+# Theming & Global Configuration
 
-Rupaui provides a centralized system for customizing the visual identity of your application, mapping directly to Bootstrap's "Customize" concepts but with Rust's type safety.
+The `Theme` module is the **Authoritative Configuration Engine** for Rupaui. It defines the "Visual DNA" of your application by setting factory defaults for all components.
 
-## 🎨 Color Modes
+## 🧬 Structural Defaults
 
-Rupaui supports **Dark**, **Light**, and **System** color modes natively.
+You can define how components are born by configuring global border and typography standards.
 
 ```rust
-use rupaui::utils::{Theme, ColorMode};
-
 Theme::update(|t| {
-    t.mode = ColorMode::Light;
+    t.borders.width = 2.0;      // All new components will have 2px borders
+    t.borders.radius = 8.0;     // All new components will be rounded by 8px
+    t.typography.base_size = 18.0; // Standardize font size
 });
 ```
 
 ---
 
+## 🔤 Font Stacks & Fallbacks
+
+Rupaui supports semantic font stacks, ensuring that your typography remains consistent even if a specific font fails to load.
+
+```rust
+Theme::update(|t| {
+    t.typography.font_stacks.insert("sans".into(), vec![
+        "Inter".into(), 
+        "Roboto".into(), 
+        "sans-serif".into()
+    ]);
+});
+```
+
+Standard stacks included: `sans`, `serif`, `mono`.
+
+---
+
 ## 🏷 Semantic Variants
 
-Variants provide a meaningful way to apply colors to components (`Primary`, `Danger`, `Success`, etc.).
+Variants (`Primary`, `Success`, `Danger`, etc.) are mapped to specific colors in the Artisan Palette. Changing a variant color in the theme updates all components using that variant.
 
-### Default Mapping
-- `Primary` -> Indigo 600
-- `Success` -> Emerald 500
-- `Danger` -> Red 500
-- `Warning` -> Amber 400
-
-### Customizing Variants
 ```rust
-use rupaui::utils::{Theme, Variant, Color};
-
 Theme::update(|t| {
+    // Change the global "Primary" identity to Rose 600
     t.variants.insert(Variant::Primary, Color::Rose(600));
 });
 ```
 
 ---
 
-## 🗝 Design Tokens (CSS Variables)
+## 🏗 Component Presets
 
-The `Theme` module acts as a global store for tokens, similar to CSS Variables.
+For complex configurations, you can store full `Style` objects as presets.
 
 ```rust
-// Defining a token
+let glass = Style::new().backdrop_blur(10.0).bg(Color::White(0.1));
 Theme::update(|t| {
-    t.colors.insert("brand-gold".into(), Color::Amber(400));
+    t.component_presets.insert("glass-panel".into(), glass);
 });
 
-// Using a token in Style
-let style = Style::new().bg(Theme::color("brand-gold"));
+// Usage
+Div::new().style(Theme::style("glass-panel"));
 ```
 
----
-
-## ⚡ Optimization
-
-Rupaui is designed for maximum efficiency in **WebAssembly**:
-- **Design Tokens** are resolved at the component level, minimizing global state lookups.
-- **Variants** are stored in fixed-size HashMaps for O(1) access time.
-- **Static Resolution**: Whenever possible, use `Theme::current()` to batch multiple property lookups.
+## 🚀 Performance
+Theme data is stored in an `Arc<RwLock>`, allowing for safe, concurrent read access across multiple UI threads while enabling dynamic updates (like live theme switching) at runtime.

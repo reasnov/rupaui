@@ -1,4 +1,4 @@
-use crate::utils::{Style, StyleModifier, generate_id, Attributes};
+use crate::utils::{Style, StyleModifier, generate_id, Attributes, Theme};
 use crate::Component;
 use crate::container::Children;
 use crate::elements::Text;
@@ -13,9 +13,12 @@ pub struct Div {
 
 impl Div {
     pub fn new() -> Self {
+        let mut style = Style::default();
+        Theme::current().apply_defaults(&mut style);
+
         Self {
             id: generate_id(),
-            style: Style::default(),
+            style,
             attributes: Attributes::new(),
             children: Children::new(),
         }
@@ -23,11 +26,6 @@ impl Div {
 
     pub fn id(mut self, id: impl Into<String>) -> Self {
         self.id = id.into();
-        self
-    }
-
-    pub fn attr(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
-        self.attributes.set(key, value);
         self
     }
 
@@ -41,11 +39,6 @@ impl Div {
         self
     }
 
-    pub fn children(mut self, children: Vec<Box<dyn Component>>) -> Self {
-        self.children.append(children);
-        self
-    }
-
     pub fn text(mut self, content: impl Into<String>) -> Self {
         self.children.add(Box::new(Text::new(content)));
         self
@@ -55,7 +48,7 @@ impl Div {
 impl Component for Div {
     fn id(&self) -> &str { &self.id }
     fn render(&self) {
-        log::debug!("Rendering Div [ID: {}] attrs={:?}", self.id, self.attributes.map);
+        log::debug!("Rendering Div [ID: {}]", self.id);
         self.children.render_all();
     }
 }

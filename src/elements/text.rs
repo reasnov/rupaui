@@ -1,4 +1,4 @@
-use crate::utils::{Style, StyleModifier, generate_id};
+use crate::utils::{Style, StyleModifier, generate_id, Theme};
 use crate::Component;
 
 /// A semantic component for displaying text.
@@ -10,10 +10,13 @@ pub struct Text {
 
 impl Text {
     pub fn new(content: impl Into<String>) -> Self {
+        let mut style = Style::default();
+        Theme::current().apply_defaults(&mut style);
+
         Self {
             id: generate_id(),
             content: content.into(),
-            style: Style::default(),
+            style,
         }
     }
 
@@ -22,7 +25,6 @@ impl Text {
         self
     }
 
-    /// Flexible styling using the modular StyleModifier API.
     pub fn style(mut self, modifier: impl StyleModifier) -> Self {
         modifier.apply(&mut self.style);
         self
@@ -32,11 +34,6 @@ impl Text {
 impl Component for Text {
     fn id(&self) -> &str { &self.id }
     fn render(&self) {
-        log::debug!(
-            "Rendering Text [ID: {}]: '{}' (Size: {:?})", 
-            self.id,
-            self.content, 
-            self.style.typography.size
-        );
+        log::debug!("Rendering Text [ID: {}]: '{}'", self.id, self.content);
     }
 }
