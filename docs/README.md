@@ -6,10 +6,11 @@ Welcome to the **Rupaui** documentation. Rupaui is a modern, cross-platform UI f
 
 1. [**Core Philosophy**](./core/philosophy.md) - "Utility-First, Semantic-Support" and the CBRA model.
 2. [**State Management**](./core/state-management.md) - Reactive UI with Signals and Memos.
-3. [**Extending Rupaui**](./core/extending.md) - Building your own utilities and elements.
-4. [**Component Attributes**](./core/attributes.md) - **NEW!** Dynamic metadata and data-attributes.
-5. [**Vector Math**](./core/vector-math.md) - High-precision calculations for paths and layouts.
-6. [**WebAssembly & Platforms**](./core/platforms.md) - Deployment and cross-platform guides.
+3. [**Control Flow**](./core/control-flow.md) - **NEW!** Conditional rendering and list repetition.
+4. [**Extending Rupaui**](./core/extending.md) - Building your own utilities and elements.
+5. [**Component Attributes**](./core/attributes.md) - Dynamic metadata and data-attributes.
+6. [**Vector Math**](./core/vector-math.md) - High-precision calculations for paths and layouts.
+7. [**WebAssembly & Platforms**](./core/platforms.md) - Deployment and cross-platform guides.
 
 ## 📚 Component Reference
 
@@ -39,21 +40,16 @@ Welcome to the **Rupaui** documentation. Rupaui is a modern, cross-platform UI f
 13. [**Tables**](./styling/tables.md) - Structured data layout.
 14. [**Interactivity & SVG**](./styling/interactivity-svg.md) - Input feedback and vector styling.
 
-## 🚀 Quick Start (Reactive Form)
+## 🚀 Quick Start (List Rendering)
 
 ```rust
 use rupaui::prelude::*;
 
 fn main() {
-    let username = Signal::new("Artisan".into());
+    let users = Signal::new(vec!["Alice", "Bob", "Charlie"]);
     
-    let profile_form = Div::new()
-        .style(p(20.0))
-        .attr("data-section", "profile-header")
-        .child(Box::new(
-            Input::new("Username")
-                .label("Your Alias")
-                .value(username.clone())
-        ));
+    let user_list = ForEach::new(users.clone(), |name| {
+        Box::new(Text::new(*name).style(p(8.0)))
+    });
 }
 ```

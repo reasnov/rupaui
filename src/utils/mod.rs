@@ -23,6 +23,7 @@ pub mod responsive;
 pub mod theme;
 pub mod modifiers;
 pub mod attributes;
+pub mod events;
 
 pub use style::Style;
 pub use color::Color;
@@ -47,4 +48,5 @@ pub use responsive::Breakpoint;
 pub use theme::{Theme, Variant, ColorMode};
 pub use modifiers::{StyleModifier, p, m, bg, w, h, rounded};
 pub use attributes::Attributes;
+pub use events::{Event, EventListeners};
 pub(crate) use id::generate_id;

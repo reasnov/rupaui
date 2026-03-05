@@ -11,6 +11,7 @@ pub mod content;
 pub mod overlay;
 pub mod helpers;
 pub mod brand;
+pub mod control_flow;
 
 pub use div::Div;
 pub use text::Text;
@@ -24,3 +25,4 @@ pub use content::{Card, Accordion, ListGroup, Collapse, Dropdown};
 pub use overlay::{Modal, Offcanvas, Toast};
 pub use helpers::{VStack, HStack, Vr, Ratio};
 pub use brand::Brand;
+pub use control_flow::{Show, ForEach};
