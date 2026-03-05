@@ -22,6 +22,7 @@ pub mod vector;
 pub mod responsive;
 pub mod theme;
 pub mod modifiers;
+pub mod attributes;
 
 pub use style::Style;
 pub use color::Color;
@@ -45,4 +46,5 @@ pub use vector::Vec2;
 pub use responsive::Breakpoint;
 pub use theme::{Theme, Variant, ColorMode};
 pub use modifiers::{StyleModifier, p, m, bg, w, h, rounded};
+pub use attributes::Attributes;
 pub(crate) use id::generate_id;

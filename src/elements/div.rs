@@ -1,12 +1,13 @@
-use crate::utils::{Style, StyleModifier, generate_id};
+use crate::utils::{Style, StyleModifier, generate_id, Attributes};
 use crate::Component;
 use crate::container::Children;
 use crate::elements::Text;
 
-/// A generic container for UI layout.
+/// A generic container for UI layout with dynamic attributes.
 pub struct Div {
     pub id: String,
     pub style: Style,
+    pub attributes: Attributes,
     pub children: Children,
 }
 
@@ -15,6 +16,7 @@ impl Div {
         Self {
             id: generate_id(),
             style: Style::default(),
+            attributes: Attributes::new(),
             children: Children::new(),
         }
     }
@@ -24,8 +26,11 @@ impl Div {
         self
     }
 
-    /// Flexible styling using the modular StyleModifier API.
-    /// Supports Style objects, tuples of modifiers, or closures.
+    pub fn attr(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.attributes.set(key, value);
+        self
+    }
+
     pub fn style(mut self, modifier: impl StyleModifier) -> Self {
         modifier.apply(&mut self.style);
         self
@@ -50,7 +55,7 @@ impl Div {
 impl Component for Div {
     fn id(&self) -> &str { &self.id }
     fn render(&self) {
-        log::debug!("Rendering Div [ID: {}] with {} children", self.id, self.children.list.len());
+        log::debug!("Rendering Div [ID: {}] attrs={:?}", self.id, self.attributes.map);
         self.children.render_all();
     }
 }
