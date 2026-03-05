@@ -29,7 +29,7 @@ pub use style::Style;
 pub use color::Color;
 pub use state::{Signal, Memo};
 pub use layout::{Layout, Display, Position, Overflow, Visibility};
-pub use flex::{Flex, FlexDirection, FlexWrap};
+pub use flex::{Flex, FlexDirection, FlexWrap, AlignItems, JustifyContent};
 pub use grid::{Grid, GridAutoFlow};
 pub use sizing::Sizing;
 pub use typography::*;
