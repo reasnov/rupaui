@@ -1,18 +1,11 @@
 #[derive(Clone, Debug, PartialEq, Default)]
-pub enum GridAutoFlow { #[default] Row, Column, Dense, RowDense, ColumnDense }
+pub enum GridAutoFlow { #[default] Row, Col, RowDense, ColDense }
 
-#[derive(Clone, Debug, PartialEq, Default)]
-pub enum JustifyItems { #[default] Start, Center, End, Stretch }
-
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Grid {
-    pub template_columns: Vec<String>,
-    pub template_rows: Vec<String>,
-    pub auto_columns: Vec<String>,
-    pub auto_rows: Vec<String>,
-    pub auto_flow: GridAutoFlow,
-    pub column_span: Option<String>,
-    pub row_span: Option<String>,
-    pub gap: (f32, f32), // (row, col)
-    pub justify_items: JustifyItems,
+    pub grid_template_columns: Vec<String>,
+    pub grid_template_rows: Vec<String>,
+    pub grid_auto_flow: GridAutoFlow,
+    pub column_gap: Option<f32>,
+    pub row_gap: Option<f32>,
 }

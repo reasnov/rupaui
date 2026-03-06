@@ -45,3 +45,22 @@ pub struct Interactivity {
     pub will_change: Vec<String>,
     pub stretched_link: bool, // Helper: Stretched Link
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_interactivity_defaults() {
+        let inter = Interactivity::default();
+        assert_eq!(inter.cursor, Cursor::Default);
+        assert_eq!(inter.user_select, UserSelect::Auto);
+    }
+
+    #[test]
+    fn test_cursor_change() {
+        let mut inter = Interactivity::default();
+        inter.cursor = Cursor::Pointer;
+        assert_eq!(inter.cursor, Cursor::Pointer);
+    }
+}

@@ -1,23 +1,23 @@
 #[derive(Clone, Debug, PartialEq, Default)]
-pub enum FlexDirection { #[default] Row, Column, RowReverse, ColumnReverse }
+pub enum FlexDirection { #[default] Row, Col, RowReverse, ColReverse }
 
 #[derive(Clone, Debug, PartialEq, Default)]
 pub enum FlexWrap { #[default] NoWrap, Wrap, WrapReverse }
 
 #[derive(Clone, Debug, PartialEq, Default)]
-pub enum AlignItems { #[default] Start, Center, End, Stretch, Baseline }
+pub enum AlignItems { #[default] Stretch, FlexStart, FlexEnd, Center, Baseline }
 
 #[derive(Clone, Debug, PartialEq, Default)]
-pub enum JustifyContent { #[default] Start, Center, End, SpaceBetween, SpaceAround, SpaceEvenly }
+pub enum JustifyContent { #[default] FlexStart, FlexEnd, Center, SpaceBetween, SpaceAround, SpaceEvenly }
 
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Flex {
-    pub direction: FlexDirection,
-    pub wrap: FlexWrap,
-    pub grow: f32,
-    pub shrink: f32,
-    pub basis: Option<f32>,
-    pub align_items: AlignItems,
-    pub justify_content: JustifyContent,
-    pub order: i32,
+    pub flex_direction: FlexDirection,
+    pub flex_wrap: FlexWrap,
+    pub flex_grow: f32,
+    pub flex_shrink: f32,
+    pub flex_basis: Option<f32>,
+    pub align_items: Option<AlignItems>,
+    pub justify_content: Option<JustifyContent>,
+    pub gap: Option<f32>,
 }

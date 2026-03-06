@@ -1,73 +1,76 @@
-use crate::utils::{Style, StyleModifier, PathData, generate_id};
+use crate::utils::{Style, generate_id, StyleModifier, Vec2, Attributes, Accessibility};
 use crate::Component;
-use crate::container::Children;
+use crate::renderer::Renderer;
+use taffy::prelude::*;
 
-/// The root semantic component for vector graphics.
-pub struct SvgCanvas {
+pub struct Path { pub points: Vec<Vec2>, pub color: [f32; 4], pub thickness: f32 }
+
+pub struct Icon {
     pub id: String,
-    pub style: Style,
-    pub children: Children,
+    pub name: String,
+    pub size: f32,
+    pub color: [f32; 4],
+}
+
+impl Icon {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self { id: generate_id(), name: name.into(), size: 24.0, color: [1.0, 1.0, 1.0, 1.0] }
+    }
+    pub fn size(mut self, s: f32) -> Self { self.size = s; self }
+    pub fn color(mut self, c: [f32; 4]) -> Self { self.color = c; self }
+}
+
+impl Component for Icon {
+    fn id(&self) -> &str { &self.id }
+    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+        let mut s = taffy::style::Style::default();
+        s.size = Size { width: length(self.size), height: length(self.size) };
+        let node = taffy.new_leaf(s).unwrap();
+        if let Some(p) = parent { taffy.add_child(p, node).unwrap(); }
+        node
+    }
+    fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, _is_group_hovered: bool, _render_pass: &mut wgpu::RenderPass<'_>) {
+        let layout = taffy.layout(node).unwrap();
+        // Placeholder for real SVG icon rendering logic
+        renderer.draw_rect(layout.location.x, layout.location.y, self.size, self.size, self.color, 2.0);
+    }
+    fn on_click(&self) {}
+    fn on_scroll(&self, _d: f32) {}
+    fn on_drag(&self, _d: Vec2) {}
+}
+
+pub struct SvgCanvas {
+    pub id: String, pub paths: Vec<Path>, pub style: Style, pub attributes: Attributes, pub accessibility: Accessibility,
 }
 
 impl SvgCanvas {
     pub fn new() -> Self {
-        Self {
-            id: generate_id(),
-            style: Style::default(),
-            children: Children::new(),
-        }
+        Self { id: generate_id(), paths: Vec::new(), style: Style::default(), attributes: Attributes::default(), accessibility: Accessibility::default() }
     }
-
-    pub fn style(mut self, modifier: impl StyleModifier) -> Self {
-        modifier.apply(&mut self.style);
-        self
-    }
-
-    pub fn child(mut self, child: Box<dyn Component>) -> Self {
-        self.children.add(child);
-        self
-    }
+    pub fn id(mut self, id: impl Into<String>) -> Self { self.id = id.into(); self }
+    pub fn add_path(&mut self, path: Path) { self.paths.push(path); }
 }
 
 impl Component for SvgCanvas {
     fn id(&self) -> &str { &self.id }
-    fn render(&self) {
-        log::debug!("Rendering SVG Canvas [ID: {}]", self.id);
-        self.children.render_all();
+    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+        let node = taffy.new_leaf(self.style.to_taffy()).unwrap();
+        if let Some(p) = parent { taffy.add_child(p, node).unwrap(); }
+        node
     }
-}
-
-/// A semantic component representing a vector path.
-pub struct Path {
-    pub id: String,
-    pub data: PathData,
-    pub style: Style,
-}
-
-impl Path {
-    pub fn new() -> Self {
-        Self {
-            id: generate_id(),
-            data: PathData::new(),
-            style: Style::default(),
+    fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool, _render_pass: &mut wgpu::RenderPass<'_>) {
+        let layout = taffy.layout(node).unwrap();
+        let style = if is_group_hovered && self.style.group_hover.is_some() { self.style.group_hover.as_ref().unwrap() } else { &self.style };
+        if let Some(color) = style.background.color.clone() {
+            renderer.draw_rect(layout.location.x, layout.location.y, layout.size.width, layout.size.height, color.to_rgba(), 0.0);
+        }
+        for path in &self.paths {
+            for point in &path.points {
+                renderer.draw_rect(layout.location.x + point.x, layout.location.y + point.y, path.thickness, path.thickness, path.color, 0.0);
+            }
         }
     }
-
-    /// Set the vector path data.
-    pub fn data(mut self, data: PathData) -> Self {
-        self.data = data;
-        self
-    }
-
-    pub fn style(mut self, modifier: impl StyleModifier) -> Self {
-        modifier.apply(&mut self.style);
-        self
-    }
-}
-
-impl Component for Path {
-    fn id(&self) -> &str { &self.id }
-    fn render(&self) {
-        log::debug!("Rendering Path [ID: {}]: {}", self.id, self.data.to_svg_string());
-    }
+    fn on_click(&self) {}
+    fn on_scroll(&self, _d: f32) {}
+    fn on_drag(&self, _d: Vec2) {}
 }

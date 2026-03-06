@@ -15,3 +15,24 @@ pub struct Accessibility {
     pub hidden: bool,
     pub visually_hidden: bool, // Helper: Visually Hidden
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_accessibility_defaults() {
+        let acc = Accessibility::default();
+        assert_eq!(acc.role, Role::None);
+        assert_eq!(acc.hidden, false);
+    }
+
+    #[test]
+    fn test_accessibility_role() {
+        let mut acc = Accessibility::default();
+        acc.role = Role::Button;
+        acc.label = Some("Save".to_string());
+        assert_eq!(acc.role, Role::Button);
+        assert_eq!(acc.label.unwrap(), "Save");
+    }
+}

@@ -1,108 +1,92 @@
-use crate::utils::{Style, StyleModifier, generate_id, Signal, Variant};
+use crate::utils::{Style, generate_id, StyleModifier, Signal, Theme, Color, Accessibility, Attributes};
 use crate::Component;
 use crate::container::Children;
+use crate::renderer::Renderer;
+use taffy::prelude::*;
 
-/// A high-priority overlay that blocks interaction with the rest of the UI.
 pub struct Modal {
     pub id: String,
     pub is_open: Signal<bool>,
     pub style: Style,
+    pub accessibility: Accessibility,
+    pub attributes: Attributes,
     pub children: Children,
+    pub header: Option<Box<dyn Component>>,
+    pub footer: Option<Box<dyn Component>>,
 }
 
 impl Modal {
-    pub fn new(open_signal: Signal<bool>) -> Self {
+    pub fn new(is_open: Signal<bool>) -> Self {
+        let mut style = Style::default();
+        Theme::current().apply_defaults(&mut style);
+        style.background.color = Some(Color::Semantic("surface".into(), None));
+        style.sizing.width = Some(400.0);
+        style.padding = crate::utils::spacing::Spacing::all(24.0);
+
         Self {
             id: generate_id(),
-            is_open: open_signal,
-            style: Style::default(),
+            is_open,
+            style,
+            accessibility: Accessibility { role: crate::utils::Role::Alert, ..Default::default() },
+            attributes: Attributes::default(),
             children: Children::new(),
+            header: None,
+            footer: None,
         }
     }
-
-    pub fn style(mut self, modifier: impl StyleModifier) -> Self {
-        modifier.apply(&mut self.style);
-        self
-    }
-
-    pub fn child(mut self, child: Box<dyn Component>) -> Self {
-        self.children.add(child);
-        self
-    }
+    pub fn id(mut self, id: impl Into<String>) -> Self { self.id = id.into(); self }
+    pub fn header(mut self, h: Box<dyn Component>) -> Self { self.header = Some(h); self }
+    pub fn child(mut self, c: Box<dyn Component>) -> Self { self.children.add(c); self }
+    pub fn footer(mut self, f: Box<dyn Component>) -> Self { self.footer = Some(f); self }
 }
 
 impl Component for Modal {
     fn id(&self) -> &str { &self.id }
-    fn render(&self) {
-        if self.is_open.get() {
-            log::debug!("Rendering Modal [{}]", self.id);
-            self.children.render_all();
+    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+        if !self.is_open.get() {
+            return taffy.new_leaf(taffy::style::Style { display: taffy::style::Display::None, ..Default::default() }).unwrap();
         }
+        let node = taffy.new_with_children(self.style.to_taffy(), &[]).unwrap();
+        if let Some(p) = parent { taffy.add_child(p, node).unwrap(); }
+        if let Some(ref h) = self.header { h.layout(taffy, Some(node)); }
+        self.children.layout_all(taffy, node);
+        if let Some(ref f) = self.footer { f.layout(taffy, Some(node)); }
+        node
     }
+    fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool) {
+        if !self.is_open.get() { return; }
+        let layout = taffy.layout(node).unwrap();
+        if let Some(color) = self.style.background.color.clone() {
+            renderer.draw_rect(layout.location.x, layout.location.y, layout.size.width, layout.size.height, color.to_rgba(), 12.0);
+        }
+        self.children.paint_all(renderer, taffy, node, is_group_hovered);
+    }
+    fn on_click(&self) {}
 }
 
-/// A sidebar overlay that slides from the edge of the screen.
-pub struct Offcanvas {
+pub struct Tooltip {
     pub id: String,
-    pub is_open: Signal<bool>,
-    pub style: Style,
-    pub children: Children,
-}
-
-impl Offcanvas {
-    pub fn new(open_signal: Signal<bool>) -> Self {
-        Self {
-            id: generate_id(),
-            is_open: open_signal,
-            style: Style::default(),
-            children: Children::new(),
-        }
-    }
-
-    pub fn child(mut self, child: Box<dyn Component>) -> Self {
-        self.children.add(child);
-        self
-    }
-}
-
-impl Component for Offcanvas {
-    fn id(&self) -> &str { &self.id }
-    fn render(&self) {
-        if self.is_open.get() {
-            log::debug!("Rendering Offcanvas [{}]", self.id);
-            self.children.render_all();
-        }
-    }
-}
-
-/// A lightweight notification that disappears automatically.
-pub struct Toast {
-    pub id: String,
-    pub message: String,
-    pub variant: Variant,
-    pub is_visible: Signal<bool>,
+    pub text: String,
     pub style: Style,
 }
 
-impl Toast {
-    pub fn new(message: impl Into<String>) -> Self {
-        Self {
-            id: generate_id(),
-            message: message.into(),
-            variant: Variant::Primary,
-            is_visible: Signal::new(true),
-            style: Style::default(),
-        }
+impl Tooltip {
+    pub fn new(text: impl Into<String>) -> Self {
+        Self { id: generate_id(), text: text.into(), style: Style::default() }
     }
-
-    pub fn variant(mut self, v: Variant) -> Self { self.variant = v; self }
 }
 
-impl Component for Toast {
+impl Component for Tooltip {
     fn id(&self) -> &str { &self.id }
-    fn render(&self) {
-        if self.is_visible.get() {
-            log::debug!("Rendering Toast [{}]: {}", self.id, self.message);
-        }
+    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+        let node = taffy.new_leaf(self.style.to_taffy()).unwrap();
+        if let Some(p) = parent { taffy.add_child(p, node).unwrap(); }
+        node
     }
+    fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, _is_group_hovered: bool) {
+        let layout = taffy.layout(node).unwrap();
+        renderer.draw_rect(layout.location.x, layout.location.y, layout.size.width, layout.size.height, [0.1, 0.1, 0.1, 0.9], 4.0);
+        renderer.draw_text(&self.text, layout.location.x + 4.0, layout.location.y + 2.0, 12.0, [1.0, 1.0, 1.0, 1.0]);
+    }
+    fn on_click(&self) {}
 }

@@ -28,3 +28,23 @@ pub struct Effects {
     pub z_index: Option<i32>,
     pub focus_ring: bool, // Helper: Focus Ring
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::Color;
+
+    #[test]
+    fn test_shadow_creation() {
+        let shadow = Shadow::new(5.0, 5.0, 10.0, Color::Rgba(0.0, 0.0, 0.0, 0.5));
+        assert_eq!(shadow.offset, [5.0, 5.0]);
+        assert_eq!(shadow.blur, 10.0);
+    }
+
+    #[test]
+    fn test_effects_defaults() {
+        let effects = Effects::default();
+        assert_eq!(effects.opacity, None);
+        assert!(effects.box_shadow.is_empty());
+    }
+}

@@ -1,73 +1,69 @@
 use crate::utils::{Signal, generate_id};
 use crate::Component;
-use crate::container::Children;
-use std::fmt::Debug;
+use crate::renderer::Renderer;
+use taffy::prelude::*;
 
-/// Conditional rendering component (if/else).
 pub struct Show {
     pub id: String,
     pub when: Signal<bool>,
-    pub fallback: Option<Box<dyn Component>>,
-    pub children: Children,
+    pub child: Box<dyn Component>,
 }
 
 impl Show {
-    pub fn new(condition: Signal<bool>) -> Self {
-        Self {
-            id: generate_id(),
-            when: condition,
-            fallback: None,
-            children: Children::new(),
-        }
-    }
-
-    pub fn fallback(mut self, component: Box<dyn Component>) -> Self {
-        self.fallback = Some(component);
-        self
-    }
-
-    pub fn child(mut self, child: Box<dyn Component>) -> Self {
-        self.children.add(child);
-        self
+    pub fn new(when: Signal<bool>, child: Box<dyn Component>) -> Self {
+        Self { id: generate_id(), when, child }
     }
 }
 
 impl Component for Show {
     fn id(&self) -> &str { &self.id }
-    fn render(&self) {
-        if self.when.get() {
-            self.children.render_all();
-        } else if let Some(ref fallback) = self.fallback {
-            fallback.render();
+    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+        if self.when.get() { self.child.layout(taffy, parent) }
+        else {
+            let node = taffy.new_leaf(taffy::style::Style { display: taffy::style::Display::None, ..Default::default() }).unwrap();
+            if let Some(p) = parent { taffy.add_child(p, node).unwrap(); }
+            node
         }
     }
+    fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool, render_pass: &mut wgpu::RenderPass<'_>) {
+        if self.when.get() { self.child.paint(renderer, taffy, node, is_group_hovered, render_pass); }
+    }
+    fn on_click(&self) { if self.when.get() { self.child.on_click(); } }
+    fn on_scroll(&self, delta: f32) { if self.when.get() { self.child.on_scroll(delta); } }
+    fn on_drag(&self, delta: crate::utils::Vec2) { if self.when.get() { self.child.on_drag(delta); } }
 }
 
-/// Dynamic list rendering component (Repeater).
-/// Takes a Signal of Vec<T> and a mapping function.
-pub struct ForEach<T> {
+pub struct ForEach<T: Clone + 'static> {
     pub id: String,
     pub items: Signal<Vec<T>>,
     pub render_item: Box<dyn Fn(&T) -> Box<dyn Component>>,
 }
 
-impl<T: Clone + Debug + 'static> ForEach<T> {
+impl<T: Clone + 'static> ForEach<T> {
     pub fn new(items: Signal<Vec<T>>, render_item: impl Fn(&T) -> Box<dyn Component> + 'static) -> Self {
-        Self {
-            id: generate_id(),
-            items,
-            render_item: Box::new(render_item),
-        }
+        Self { id: generate_id(), items, render_item: Box::new(render_item) }
     }
 }
 
-impl<T: Clone + Debug> Component for ForEach<T> {
+impl<T: Clone + 'static> Component for ForEach<T> {
     fn id(&self) -> &str { &self.id }
-    fn render(&self) {
-        let current_items = self.items.get();
-        log::debug!("Rendering ForEach [{}] with {} items", self.id, current_items.len());
-        for item in current_items.iter() {
-            (self.render_item)(item).render();
+    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+        let node = taffy.new_with_children(taffy::style::Style::default(), &[]).unwrap();
+        if let Some(p) = parent { taffy.add_child(p, node).unwrap(); }
+        for item in self.items.get().iter() {
+            (self.render_item)(item).layout(taffy, Some(node));
+        }
+        node
+    }
+    fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool, render_pass: &mut wgpu::RenderPass<'_>) {
+        let children_nodes = taffy.children(node).unwrap();
+        for (i, item) in self.items.get().iter().enumerate() {
+            if let Some(child_node) = children_nodes.get(i) {
+                (self.render_item)(item).paint(renderer, taffy, *child_node, is_group_hovered, render_pass);
+            }
         }
     }
+    fn on_click(&self) {}
+    fn on_scroll(&self, _d: f32) {}
+    fn on_drag(&self, _d: crate::utils::Vec2) {}
 }

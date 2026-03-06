@@ -1,23 +1,19 @@
 use std::sync::Arc;
+use crate::utils::vector::Vec2;
 
-/// Standard events supported by Rupaui components.
-pub enum Event {
-    Click,
-    Input(String),
-    Focus,
-    Blur,
-    MouseEnter,
-    MouseLeave,
-    KeyDown(String),
-}
+pub type ClickCallback = Arc<dyn Fn() + Send + Sync>;
+pub type ChangeCallback<T> = Arc<dyn Fn(T) + Send + Sync>;
+pub type HoverCallback = Arc<dyn Fn(bool) + Send + Sync>;
+pub type ScrollCallback = Arc<dyn Fn(f32) + Send + Sync>; // Delta Y
+pub type DragCallback = Arc<dyn Fn(Vec2) + Send + Sync>; // Delta position
 
-/// A container for component event listeners.
-/// Uses Arc to allow safe sharing across threads/wasm tasks.
 #[derive(Clone, Default)]
 pub struct EventListeners {
-    pub on_click: Option<Arc<dyn Fn() + Send + Sync>>,
-    pub on_input: Option<Arc<dyn Fn(String) + Send + Sync>>,
-    pub on_change: Option<Arc<dyn Fn(bool) + Send + Sync>>,
+    pub on_click: Option<ClickCallback>,
+    pub on_change: Option<ChangeCallback<String>>,
+    pub on_hover: Option<HoverCallback>,
+    pub on_scroll: Option<ScrollCallback>,
+    pub on_drag: Option<DragCallback>,
 }
 
 impl std::fmt::Debug for EventListeners {
@@ -27,5 +23,5 @@ impl std::fmt::Debug for EventListeners {
 }
 
 impl PartialEq for EventListeners {
-    fn eq(&self, _other: &Self) -> bool { true } // Listeners are functional, comparison is skipped
+    fn eq(&self, _other: &Self) -> bool { true }
 }

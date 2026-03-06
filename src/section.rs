@@ -1,6 +1,8 @@
 use crate::utils::{Style, StyleModifier, generate_id, Theme};
 use crate::Component;
 use crate::container::Children;
+use crate::renderer::Renderer;
+use taffy::prelude::*;
 
 /// Represents a distinct semantic part of the interface.
 pub struct Section {
@@ -46,8 +48,42 @@ impl Section {
 
 impl Component for Section {
     fn id(&self) -> &str { &self.id }
-    fn render(&self) {
-        log::debug!("Rendering Section [ID: {}]: {}", self.id, self.name);
-        self.children.render_all();
+
+    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+        let node = taffy.new_with_children(self.style.to_taffy(), &[]).unwrap();
+        if let Some(p) = parent { taffy.add_child(p, node).unwrap(); }
+        self.children.layout_all(taffy, node);
+        node
+    }
+
+    fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool) {
+        let layout = taffy.layout(node).unwrap();
+        
+        let style = if is_group_hovered && self.style.group_hover.is_some() {
+            self.style.group_hover.as_ref().unwrap()
+        } else {
+            &self.style
+        };
+
+        if let Some(color) = style.background.color.clone() {
+            renderer.draw_rect(layout.location.x, layout.location.y, layout.size.width, layout.size.height, color.to_rgba(), style.rounding.top_left);
+        }
+        self.children.paint_all(renderer, taffy, node, is_group_hovered || self.style.is_group);
+    }
+
+    fn on_click(&self) {
+        // Section usually delegates or handles broad layout clicks
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_section_creation() {
+        let section = Section::new("Sidebar").id("side-1");
+        assert_eq!(section.name, "Sidebar");
+        assert_eq!(section.id, "side-1");
     }
 }

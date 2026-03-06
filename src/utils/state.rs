@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::fmt::Debug;
+use crate::app::request_redraw;
 
 /// A reactive state container that notifies listeners on change.
 pub struct Signal<T> {
@@ -29,6 +30,7 @@ impl<T: Clone + Debug> Signal<T> {
         *val = new_value;
         self.version.fetch_add(1, Ordering::SeqCst);
         log::trace!("Signal updated (v{}): {:?}", self.version(), *val);
+        request_redraw();
     }
 
     pub fn update<F>(&self, f: F)
@@ -39,6 +41,56 @@ impl<T: Clone + Debug> Signal<T> {
         f(&mut val);
         self.version.fetch_add(1, Ordering::SeqCst);
         log::trace!("Signal mutated (v{}): {:?}", self.version(), *val);
+        request_redraw();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_signal_update() {
+        let s = Signal::new(10);
+        assert_eq!(s.get(), 10);
+        s.set(20);
+        assert_eq!(s.get(), 20);
+        s.update(|v| *v += 5);
+        assert_eq!(s.get(), 25);
+    }
+
+    #[test]
+    fn test_memo_derivation() {
+        let s = Signal::new(10);
+        let m = Memo::new(s.clone(), |v| v * 2);
+        assert_eq!(m.get(), 20);
+        
+        s.set(20);
+        assert_eq!(m.get(), 40); // Memo must update
+    }
+
+    #[test]
+    fn test_memo_caching() {
+        let s = Signal::new(10);
+        let counter = Arc::new(AtomicU64::new(0));
+        
+        let m = Memo::new(s.clone(), {
+            let counter = counter.clone();
+            move |v| {
+                counter.fetch_add(1, Ordering::SeqCst);
+                v + 1
+            }
+        });
+
+        assert_eq!(m.get(), 11);
+        assert_eq!(counter.load(Ordering::SeqCst), 1); // Computed once
+
+        assert_eq!(m.get(), 11);
+        assert_eq!(counter.load(Ordering::SeqCst), 1); // Still 1 (Cached)
+
+        s.set(20);
+        assert_eq!(m.get(), 21);
+        assert_eq!(counter.load(Ordering::SeqCst), 2); // Recomputed
     }
 }
 

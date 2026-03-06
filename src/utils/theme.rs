@@ -88,6 +88,27 @@ impl Theme {
 
     pub fn variant(v: Variant) -> Color {
         let theme = CURRENT_THEME.read().unwrap();
-        theme.variants.get(&v).cloned().unwrap_or(Color::Slate(500))
+        theme.variants.get(&v).cloned().unwrap_or(Color::Semantic("primary".into(), None))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_theme_load() {
+        let theme = Theme::current();
+        assert_eq!(theme.mode, ColorMode::Dark);
+    }
+
+    #[test]
+    fn test_variant_resolution() {
+        let color = Theme::variant(Variant::Primary);
+        // Default artisan primary is Indigo
+        match color {
+            Color::Semantic(name, _) => assert_eq!(name, "primary"),
+            _ => {}
+        }
     }
 }

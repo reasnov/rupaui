@@ -32,3 +32,28 @@ pub struct Motion {
     pub transitions: Vec<Transition>,
     pub animations: Vec<Animation>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_motion_defaults() {
+        let motion = Motion::default();
+        assert!(motion.transitions.is_empty());
+        assert!(motion.animations.is_empty());
+    }
+
+    #[test]
+    fn test_transition_creation() {
+        let t = Transition {
+            property: "opacity".to_string(),
+            duration: 300.0,
+            timing: TimingFunction::EaseIn,
+            ..Default::default()
+        };
+        assert_eq!(t.property, "opacity");
+        assert_eq!(t.duration, 300.0);
+        assert_eq!(t.timing, TimingFunction::EaseIn);
+    }
+}

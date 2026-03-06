@@ -8,3 +8,16 @@ pub fn generate_id() -> String {
     let id = ID_COUNTER.fetch_add(1, Ordering::SeqCst);
     format!("rupa-{}", id)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_id_uniqueness() {
+        let id1 = generate_id();
+        let id2 = generate_id();
+        assert_ne!(id1, id2);
+        assert!(id1.starts_with("rupa-"));
+    }
+}

@@ -1,52 +1,30 @@
-# State Management with Signals & Memos
+# Reactive State Management
 
-Rupaui utilizes a **Signal-based Reactivity** system. Unlike traditional Virtual DOM frameworks, Signals provide fine-grained updates, while **Memos** ensure that derived data is efficiently cached.
+Rupaui uses a signal-based reactivity pattern similar to modern frameworks like SolidJS or Preact.
 
-## 📐 Why Signals & Memos?
-- **High Performance**: Only components that consume the signal are recalculated.
-- **Memoization (Caching)**: Derived states (Memos) only recalculate when their source signals change. This prevents memory pressure and expensive redundant computations.
-- **WebAssembly Optimization**: Minimizes the overhead of syncing between Rust and the browser's DOM.
-
----
-
-## 🚀 Basic Signal Usage
-
-A `Signal` is a reactive container for any data type.
+## Signals
+`Signal<T>` is a container for data that can change. When its value is updated via `.set()` or `.update()`, Rupaui automatically triggers a redraw request to the OS event loop.
 
 ```rust
-use rupaui::utils::Signal;
-
 let count = Signal::new(0);
-count.set(10); // Updates the value and its internal version
+
+// In an event handler
+count.update(|v| *v += 1); // Automatically triggers Redraw
 ```
 
----
-
-## 🧠 Derived State with Memos
-
-A `Memo` is used for values that depend on other signals. It is similar to `useMemo` in React or `computed` in Vue/Solid.
+## Memos
+`Memo<T, D>` is used for derived state that requires expensive calculations. A Memo will only be recalculated if its source Signal changes.
 
 ```rust
-use rupaui::utils::{Signal, Memo};
-
-let count = Signal::new(5);
-
-// Create a derived state: "double_count"
-let double_count = Memo::new(count.clone(), |v| v * 2);
-
-println!("{}", double_count.get()); // 10
-
-count.set(10);
-println!("{}", double_count.get()); // 20 (Recalculated because count changed)
-
-// If we call .get() again without changing 'count', 
-// it returns the cached 20 instantly!
-println!("{}", double_count.get()); // 20 (Cached)
+let is_even = Memo::new(count.clone(), |v| v % 2 == 0);
 ```
 
----
+## Reactivity in Components
+Components like `Button` or `Modal` receive Signals for their dynamic properties.
 
-## 🏗 Best Practices
-- Use **Signal** for state that you need to modify.
-- Use **Memo** for any data that is calculated from a Signal (e.g., filtered lists, formatted strings, complex math).
-- Memos help keep your `render()` functions fast and lightweight.
+```rust
+let is_loading = Signal::new(false);
+
+Button::new("Save")
+    .loading(is_loading.clone())
+```

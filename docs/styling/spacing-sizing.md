@@ -2,6 +2,42 @@
 
 Rupaui provides a flexible system for controlling the dimensions and spacing of semantic components, including support for CSS-like shorthands and logical properties.
 
+## 📈 Unified Scale System
+
+Rupaui utilizes a standardized 10-step scale for consistent sizing across components and utilities. This scale applies to width, height, padding, margin, and component-specific sizes (like buttons).
+
+### Available Scales
+| Scale | Multiplier | Description |
+| :--- | :--- | :--- |
+| `Xs` | 0.75 | Extra Small |
+| `Sm` | 0.875 | Small |
+| `Md` | 1.0 | Medium (Default) |
+| `Lg` | 1.125 | Large |
+| `Xl` | 1.25 | Extra Large |
+| `Xl2` | 1.5 | 2XL |
+| `Xl3` | 1.875 | 3XL |
+| `Xl4` | 2.25 | 4XL |
+| `Xl5` | 3.0 | 5XL |
+| `Xl6` | 3.75 | 6XL |
+
+### Scale-Based Utilities
+Instead of passing raw pixel values, you can use semantic scale utilities:
+- `.w_scale(Scale::Lg)`: Set width based on Large scale.
+- `.h_scale(Scale::Sm)`: Set height based on Small scale.
+- `.p_scale(Scale::Md)`: Set padding based on Medium scale.
+- `.m_scale(Scale::Xl)`: Set margin based on Extra Large scale.
+- `.rounded_scale(Scale::Xs)`: Set corner radius based on Extra Small scale.
+
+```rust
+use rupaui::utils::Scale;
+
+Button::new("Artisan")
+    .size(Scale::Xl2)
+    .style(p_scale(Scale::Md))
+```
+
+---
+
 ## 📏 Sizing
 
 Control the physical and logical dimensions of elements.
@@ -14,15 +50,6 @@ Control the physical and logical dimensions of elements.
 ### Logical Sizing (Writing-mode aware)
 - `.inline_size(f32)`: Set size in the inline direction (maps to width in horizontal mode).
 - `.block_size(f32)`: Set size in the block direction (maps to height in horizontal mode).
-- Supports `.min_` and `.max_` prefixes for both.
-
-```rust
-Style::new()
-    .w(500.0)
-    .max_w(1000.0)
-    .min_h(200.0)
-    .inline_size(300.0)
-```
 
 ---
 
@@ -39,14 +66,3 @@ Rupaui supports flexible input types for spacing, allowing you to set 1, 2, or 4
 - `.m()` / `.p()`: Main margin and padding methods.
 - `.mx()` / `.px()`: Horizontal only.
 - `.my()` / `.py()`: Vertical only.
-
-```rust
-Style::new()
-    .m(20.0)             // Margin 20 on all sides
-    .mx(10.0)            // Override: Margin 10 on Left/Right
-    .p((16.0, 32.0))     // Padding: 16 Top/Bottom, 32 Left/Right
-```
-
-## 💡 Best Practices
-- Use **Logical Sizing** (`inline_size`) if you plan to support vertical writing modes in the future.
-- Use **Tuple Shorthands** for padding to keep your style chains short and readable.

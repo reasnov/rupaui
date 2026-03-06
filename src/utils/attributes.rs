@@ -22,3 +22,16 @@ impl Attributes {
         self.map.get(key)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_attributes_set_get() {
+        let mut attrs = Attributes::new();
+        attrs.set("data-id", "123");
+        assert_eq!(attrs.get("data-id").unwrap(), "123");
+        assert_eq!(attrs.get("non-existent"), None);
+    }
+}

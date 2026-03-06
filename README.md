@@ -7,11 +7,12 @@ Inspired by the ergonomics of TailwindCSS and the reliability of Bootstrap, Rupa
 ## 🌟 Key Features
 
 - **Utility-First, Semantic-Support**: Compose complex visual identities using a functional API while maintaining a clean, meaningful component hierarchy.
-- **Signal-Based Reactivity**: Fine-grained state management using `Signal` and `Memo` for zero-overhead UI updates.
-- **DNA Visual (Theme Engine)**: Centralized design tokens that dictate the "factory settings" (borders, typography, variants) for all components.
-- **Artisan Palette**: A mathematically verified color system using **OKLCH** for perceptual uniformity and consistent aesthetics.
-- **Wasm & Native**: First-class support for both WebAssembly (browser) and Native Desktop (GPU-accelerated).
-- **Extensible Architecture**: Modular framework that allows users to freely create their own utilities and semantic elements.
+- **Signal-Based Reactivity**: Fine-grained state management using `Signal` and `Memo` for zero-overhead UI updates, automatically triggering hardware-accelerated redraws.
+- **Hardware-Accelerated Rendering**: Built on **WGPU** with a specialized **2D Batch Renderer** for high-performance primitives (rects, shapes).
+- **Industrial Layout Engine**: Powered by **Taffy**, providing full support for Flexbox and CSS Grid layouts.
+- **Interactive Event System**: Full support for **Hit-Testing** and event dispatching (Click, Hover) linked directly to the layout engine.
+- **Rich Typography**: Integrated **Glyph-Brush** for high-performance, sharp text rendering using standard `.ttf` fonts.
+- **Artisan Color System**: Native support for **OKLCH** color space for perceptually uniform aesthetics and precise theme control.
 
 ## 🚀 Quick Start (Modern Modular API)
 

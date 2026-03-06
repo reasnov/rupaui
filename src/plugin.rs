@@ -32,3 +32,24 @@ impl PluginRegistry {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct MockPlugin;
+    impl Plugin for MockPlugin {
+        fn name(&self) -> &str { "Mock" }
+        fn build(&self, _app: &mut App) {
+            // Success call
+        }
+    }
+
+    #[test]
+    fn test_plugin_registration() {
+        let mut registry = PluginRegistry::new();
+        registry.add(Box::new(MockPlugin));
+        assert_eq!(registry.plugins.len(), 1);
+        assert_eq!(registry.plugins[0].name(), "Mock");
+    }
+}

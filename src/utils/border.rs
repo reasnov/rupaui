@@ -43,3 +43,22 @@ impl Rounding {
         Self { nw: val, ne: val, sw: val, se: val }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rounding_all() {
+        let r = Rounding::all(8.0);
+        assert_eq!(r.nw, 8.0);
+        assert_eq!(r.se, 8.0);
+    }
+
+    #[test]
+    fn test_border_defaults() {
+        let b = Border::default();
+        assert_eq!(b.width, 0.0);
+        assert_eq!(b.style, BorderStyle::None);
+    }
+}

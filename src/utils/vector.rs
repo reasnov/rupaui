@@ -51,3 +51,36 @@ impl SubAssign for Vec2 { fn sub_assign(&mut self, other: Self) { self.x -= othe
 
 impl From<[f32; 2]> for Vec2 { fn from(v: [f32; 2]) -> Self { Self::new(v[0], v[1]) } }
 impl From<(f32, f32)> for Vec2 { fn from(v: (f32, f32)) -> Self { Self::new(v.0, v.1) } }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_vec2_ops() {
+        let v1 = Vec2::new(10.0, 5.0);
+        let v2 = Vec2::new(2.0, 3.0);
+        
+        let add = v1 + v2;
+        assert_eq!(add.x, 12.0);
+        assert_eq!(add.y, 8.0);
+
+        let sub = v1 - v2;
+        assert_eq!(sub.x, 8.0);
+        assert_eq!(sub.y, 2.0);
+    }
+
+    #[test]
+    fn test_vec2_length() {
+        let v = Vec2::new(3.0, 4.0);
+        assert_eq!(v.length(), 5.0);
+    }
+
+    #[test]
+    fn test_vec2_normalize() {
+        let v = Vec2::new(10.0, 0.0);
+        let n = v.normalize();
+        assert_eq!(n.x, 1.0);
+        assert_eq!(n.y, 0.0);
+    }
+}
