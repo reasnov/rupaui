@@ -56,7 +56,7 @@ impl Component for Label {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing
@@ -127,7 +127,7 @@ impl Component for Checkbox {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing
@@ -200,7 +200,7 @@ impl Component for Radio {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing
@@ -273,7 +273,7 @@ impl Component for Switch {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing
@@ -347,7 +347,7 @@ impl Component for Input {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing
@@ -422,7 +422,7 @@ impl Component for Select {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing

@@ -7,9 +7,10 @@ This is the entry point of Layer 1. It acts as the grand conductor that decides 
 ## 🏗️ Core Responsibilities
 
 1.  **App Struct:** The primary builder used by end-users to bootstrap their application.
-2.  **Bootstrap Logic:** Orchestrates the injection of plugins and the initial theme setup before the platform runner takes over.
-3.  **Cross-Platform Redraw:** Provides the global `request_redraw()` function which communicates with the active backend proxy.
-4.  **Platform Abstraction:** Defines the `PlatformRunner` trait that all backends must implement to ensure a uniform lifecycle.
+2.  **PlatformCore Struct:** The shared internal heart of all platforms, managing root components, layout calculations, and cursor state.
+3.  **Bootstrap Logic:** Orchestrates the injection of plugins and the initial theme setup before the platform runner takes over.
+4.  **Cross-Platform Redraw:** Provides the global `request_redraw()` function which communicates with the active backend proxy.
+5.  **Platform Abstraction:** Defines the `PlatformRunner` trait that all backends must implement to ensure a uniform lifecycle.
 
 ---
 
@@ -21,6 +22,10 @@ The user-facing API for defining the application name and root component.
 - `.root(component)`: Attaches the top-level UI element.
 - `.run()`: Starts the GUI backend (Default).
 - `.run_tui()`: Starts the Terminal backend.
+
+### `struct PlatformCore`
+The internal core used via **Composition** in every platform runner.
+- `compute_layout(w, h)`: Common logic to update the Taffy tree.
 
 ### `trait PlatformRunner`
 The internal contract for backends:

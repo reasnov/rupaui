@@ -13,7 +13,7 @@ This module defines the "Universal Language" of input for the Rupaui framework. 
 
 ## 🗝️ Key API Elements
 
-### `enum RawInputEvent`
+### `enum InputEvent`
 The central enum containing all standardized signals:
 - `PointerMove`: Normalized cursor or touch coordinates.
 - `PointerButton`: Primary, Secondary, or Auxiliary button states.
@@ -28,5 +28,5 @@ A bit-flag-like structure tracking the state of `Shift`, `Ctrl`, `Alt`, and `Log
 ---
 
 ## 🔄 Interaction
-- **L1 (Backend) -> L1 (Events):** Backends translate their native bytes into these types.
+- **L1 (Backend) -> L1 (Events):** Backends translate their native bytes into ini format.
 - **L1 (Events) -> L1 (Dispatcher):** Normalized events are fed into the dispatcher for tree propagation.

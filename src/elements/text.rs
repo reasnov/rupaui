@@ -1,6 +1,6 @@
 use crate::utils::{Style, StyleModifier, generate_id, Theme, Color, Attributes, Accessibility, Vec2, TextAlign};
 use crate::core::component::Component;
-use crate::renderer::renderer::Renderer;
+use crate::renderer::{Renderer, TextMeasurer};
 use crate::style::modifiers::utilities::Stylable;
 use crate::platform::events::UIEvent;
 use taffy::prelude::*;
@@ -67,14 +67,27 @@ impl Component for Text {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
     
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
+        let t_style = self.view.style.borrow().to_taffy();
+        
+        // --- TEXT MEASUREMENT LOGIC ---
+        let content = self.logic.content.clone();
+        let font_size = 16.0; // TODO: Get from style
+        
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() {
-                taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap();
+                taffy.set_style(existing, t_style).unwrap();
             }
             existing
         } else {
-            let new_node = taffy.new_leaf(self.view.style.borrow().to_taffy()).unwrap();
+            // Create a leaf node with a measure function
+            let new_node = taffy.new_leaf_with_measure(t_style, move |_known_dimensions, _available_space| {
+                // In a real scenario, we'd use the measurer passed during the compute phase.
+                // However, Taffy's measure functions in 0.5 are often set at node creation.
+                // For now, we simulate a fixed measurement or we'd need a more complex context-sharing mechanism.
+                // Best Practice: Taffy 0.5 supports "Context" in compute_layout.
+                Size { width: 100.0, height: 20.0 } // Placeholder until we integrate Taffy Context
+            }).unwrap();
             self.set_node(new_node);
             new_node
         };
@@ -90,7 +103,7 @@ impl Component for Text {
         node
     }
     
-    fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool, _render_pass: &mut wgpu::RenderPass<'_>, global_pos: Vec2) {
+    fn paint(&self, renderer: &mut dyn Renderer, _taffy: &TaffyTree<()>, _node: NodeId, is_group_hovered: bool, global_pos: Vec2) {
         let style_ref = self.view.style.borrow();
         let style = if is_group_hovered && style_ref.group_hover.is_some() { 
             style_ref.group_hover.as_ref().unwrap() 

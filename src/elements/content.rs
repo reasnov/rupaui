@@ -78,7 +78,7 @@ impl<'a> Component for Card<'a> {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing
@@ -191,7 +191,7 @@ impl<'a> Component for Table<'a> {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing
@@ -281,7 +281,7 @@ impl<'a> Component for Accordion<'a> {
     fn mark_dirty(&self) { self.view.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.view.style.borrow().to_taffy()).unwrap(); }
             existing

@@ -40,7 +40,7 @@ impl<'a> Component for Show<'a> {
     fn mark_dirty(&self) { self.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         if self.when.get() { 
             let node = self.child.layout(taffy, parent);
             self.set_node(node);
@@ -106,7 +106,7 @@ impl<'a, T: Clone + Debug + Send + Sync + 'static> Component for ForEach<'a, T> 
     fn mark_dirty(&self) { self.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             existing
         } else {

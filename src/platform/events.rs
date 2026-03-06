@@ -3,7 +3,7 @@ use crate::utils::vector::Vec2;
 /// Standardized input events that are platform-agnostic.
 /// Layer 1 (HAL) is responsible for converting native events into these types.
 #[derive(Debug, Clone, PartialEq)]
-pub enum RawInputEvent {
+pub enum InputEvent {
     // Pointer Events (Mouse, Touch, Pen)
     PointerMove { position: Vec2 },
     PointerButton { button: PointerButton, state: ButtonState },

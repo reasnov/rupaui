@@ -14,7 +14,7 @@ impl<'a> VStack<'a> {
 }
 impl<'a> Component for VStack<'a> {
     fn id(&self) -> &str { self.inner.id.as_str() }
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId { self.inner.layout(taffy, parent) }
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId { self.inner.layout(taffy, parent) }
     fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool, _render_pass: &mut wgpu::RenderPass<'_>, global_pos: crate::utils::Vec2) { self.inner.paint(renderer, taffy, node, is_group_hovered, _render_pass, global_pos) }
     fn on_click(&self) { self.inner.on_click() }
     fn on_scroll(&self, d: f32) { self.inner.on_scroll(d) }
@@ -31,7 +31,7 @@ impl<'a> HStack<'a> {
 }
 impl<'a> Component for HStack<'a> {
     fn id(&self) -> &str { self.inner.id.as_str() }
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId { self.inner.layout(taffy, parent) }
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId { self.inner.layout(taffy, parent) }
     fn paint(&self, renderer: &mut Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool, _render_pass: &mut wgpu::RenderPass<'_>, global_pos: crate::utils::Vec2) { self.inner.paint(renderer, taffy, node, is_group_hovered, _render_pass, global_pos) }
     fn on_click(&self) { self.inner.on_click() }
     fn on_scroll(&self, d: f32) { self.inner.on_scroll(d) }

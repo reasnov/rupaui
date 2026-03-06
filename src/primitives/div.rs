@@ -58,7 +58,7 @@ impl<'a> Component for Div<'a> {
     fn mark_dirty(&self) { self.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { 
                 taffy.set_style(existing, self.style.borrow().to_taffy()).unwrap(); 
@@ -75,7 +75,7 @@ impl<'a> Component for Div<'a> {
             if !current_children.contains(&node) { taffy.add_child(p, node).unwrap(); }
         }
 
-        self.children.layout_all(taffy, node);
+        self.children.layout_all(taffy, measurer, node);
         self.clear_dirty();
         node
     }

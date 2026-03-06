@@ -1,47 +1,46 @@
+pub mod terminal;
+
 use std::time::Duration;
-use crossterm::{
-    event::{self, Event, KeyCode as CrossKeyCode, MouseEventKind, MouseButton as CrossMouseButton},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen, size},
-};
+use crossterm::event::{Event, KeyCode as CrossKeyCode, MouseEventKind, MouseButton as CrossMouseButton};
 use crate::core::component::Component;
-use crate::layout::engine::LayoutEngine;
 use crate::utils::vector::Vec2;
-use crate::platform::dispatcher::EventDispatcher;
+use crate::platform::dispatcher::InputDispatcher;
 use crate::platform::events::*;
+use crate::platform::PlatformCore;
+use crate::renderer::tui::TuiRenderer;
+use crate::renderer::Renderer;
+use self::terminal::TerminalInterface;
 
 pub struct TuiRunner {
-    pub app_name: String,
-    pub root: Option<Box<dyn Component>>,
-    pub layout_engine: LayoutEngine,
+    pub core: PlatformCore,
+    pub terminal: TerminalInterface,
+    pub renderer: TuiRenderer,
     pub should_quit: bool,
-    pub cursor_pos: Vec2,
 }
 
 impl TuiRunner {
     pub fn new(app_name: String, root: Option<Box<dyn Component>>) -> Self {
+        let terminal = TerminalInterface::new();
+        let (cols, rows) = terminal.get_size();
         Self {
-            app_name,
-            root,
-            layout_engine: LayoutEngine::new(),
+            core: PlatformCore::new(app_name, root),
+            terminal,
+            renderer: TuiRenderer::new(cols, rows),
             should_quit: false,
-            cursor_pos: Vec2::zero(),
         }
     }
 
     pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        enable_raw_mode()?;
-        let mut stdout = std::io::stdout();
-        execute!(stdout, EnterAlternateScreen, event::EnableMouseCapture)?;
+        self.terminal.setup()?;
 
-        let (cols, rows) = size()?;
+        let (cols, rows) = self.terminal.get_size();
         let mut current_size = Vec2::new(cols as f32, rows as f32);
 
         while !self.should_quit {
-            self.handle_redraw(current_size);
+            self.handle_redraw();
 
-            if event::poll(Duration::from_millis(16))? {
-                match event::read()? {
+            if let Some(event) = self.terminal.poll_event(Duration::from_millis(16))? {
+                match event {
                     Event::Key(key) => {
                         let code = match key.code {
                             CrossKeyCode::Char(c) => KeyCode::Char(c),
@@ -58,7 +57,7 @@ impl TuiRunner {
                         
                         if let KeyCode::Char('q') = code { self.should_quit = true; }
                         
-                        self.dispatch_event(RawInputEvent::Key { 
+                        self.dispatch_event(InputEvent::Key { 
                             key: code, 
                             state: ButtonState::Pressed, 
                             modifiers: Modifiers::default() 
@@ -66,7 +65,7 @@ impl TuiRunner {
                     }
                     Event::Mouse(mouse) => {
                         let pos = Vec2::new(mouse.column as f32, mouse.row as f32);
-                        self.dispatch_event(RawInputEvent::PointerMove { position: pos });
+                        self.dispatch_event(InputEvent::PointerMove { position: pos });
 
                         let button = match mouse.button {
                             CrossMouseButton::Left => Some(PointerButton::Primary),
@@ -82,43 +81,49 @@ impl TuiRunner {
                                 _ => None,
                             };
                             if let Some(st) = state {
-                                self.dispatch_event(RawInputEvent::PointerButton { button: btn, state: st });
+                                self.dispatch_event(InputEvent::PointerButton { button: btn, state: st });
                             }
                         }
                     }
                     Event::Resize(w, h) => {
+                        self.renderer.resize(w, h);
                         current_size = Vec2::new(w as f32, h as f32);
-                        self.dispatch_event(RawInputEvent::Resize { size: current_size, scale_factor: 1.0 });
+                        self.dispatch_event(InputEvent::Resize { 
+                            size: current_size, 
+                            scale_factor: 1.0 
+                        });
                     }
                     _ => {}
                 }
             }
         }
 
-        execute!(stdout, event::DisableMouseCapture, LeaveAlternateScreen)?;
-        disable_raw_mode()?;
+        self.terminal.restore()?;
         Ok(())
     }
 
-    fn handle_redraw(&mut self, size: Vec2) {
-        if let Some(root) = &self.root {
-            // TUI redraw logic (L2) will be called here
-            let _root_node = self.layout_engine.compute(root.as_ref(), size.x, size.y);
-            // In the future, Layer 2 will draw characters to the terminal buffer here.
+    fn handle_redraw(&mut self) {
+        let scene_node = self.core.compute_layout(self.renderer.width() as f32, self.renderer.height() as f32);
+
+        if let Some(ref root) = self.core.root {
+            root.paint(
+                &mut self.renderer,
+                &self.core.scene.layout_engine.taffy,
+                scene_node.raw(),
+                false, 
+                Vec2::zero(),
+            );
         }
+        self.renderer.present();
     }
 
-    fn dispatch_event(&mut self, event: RawInputEvent) {
-        if let Some(root) = &self.root {
-            // Since TUI doesn't store NodeId in L1 yet, we use the engine to find the root node
-            // Note: In a real implementation, we'd cache the NodeId from handle_redraw.
-            let root_node = self.layout_engine.compute(root.as_ref(), 80.0, 24.0); 
-            EventDispatcher::dispatch(
+    fn dispatch_event(&mut self, event: InputEvent) {
+        if let Some(ref root) = self.core.root {
+            InputDispatcher::dispatch(
                 event,
                 root.as_ref(),
-                &self.layout_engine.taffy,
-                root_node,
-                &mut self.cursor_pos,
+                &self.core.scene,
+                &mut self.core.cursor_pos,
             );
         }
     }

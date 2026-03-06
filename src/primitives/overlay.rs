@@ -70,7 +70,7 @@ impl<'a> Component for Modal<'a> {
     fn mark_dirty(&self) { self.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         if !self.is_open.get() { 
             let node = taffy.new_leaf(taffy::style::Style { display: taffy::style::Display::None, ..Default::default() }).unwrap(); 
             if let Some(p) = parent { taffy.add_child(p, node).unwrap(); } 
@@ -92,7 +92,7 @@ impl<'a> Component for Modal<'a> {
 
         let mut child_nodes = Vec::new();
         if let Some(ref h) = self.header { child_nodes.push(h.layout(taffy, Some(node))); }
-        child_nodes.extend(self.children.layout_all(taffy, node));
+        child_nodes.extend(self.children.layout_all(taffy, measurer, node));
         if let Some(ref f) = self.footer { child_nodes.push(f.layout(taffy, Some(node))); }
         taffy.set_children(node, &child_nodes).unwrap();
 
@@ -155,7 +155,7 @@ impl Component for Tooltip {
     fn mark_dirty(&self) { self.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             existing
         } else {

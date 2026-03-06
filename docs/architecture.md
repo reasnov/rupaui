@@ -37,38 +37,32 @@ Rupaui is built on a 9-layer stack, descending from the user-facing composition 
 *   **Core:** `Signal<T>` and `Memo<T>`.
 *   **Animation Engine:** Time-based signal interpolation (Tweens, Springs).
 
-### Layer 3: Layout Engine Layer (Geometric)
-*   **Purpose:** Resolves element sizing and positioning via **Taffy**.
-*   **Agnosticism:** Calculates coordinates in a generic unit system (mapped to Pixels for GUI or Cells for TUI).
+### Layer 3: Geometric Scene Layer
+*   **Purpose:** Manages the visual tree (Scene Graph) and resolves spatial properties.
+*   **Scene Graph:** Orchestrates the parent-child hierarchy and lifecycle of UI elements.
+*   **Geometric Resolution:** Utilizes **Taffy** to transform abstract layout rules into precise coordinates.
+*   **Spatial Awareness:** Maps global coordinates to local component spaces, essential for hit-testing and clipping.
 
 ### Layer 2: Rendering Engine Layer (Multi-Backend)
-*   **Purpose:** Translates geometric data into visual instructions for a specific backend.
-*   **GUI Backend (WGPU):** 2D Batcher, WGSL Shaders, Glyphon Typography Engine.
-*   **TUI Backend (Terminal):** ANSI Character Painter, Cell-based Buffer Management.
-*   **Headless Backend:** Virtual buffer for automated testing and server-side rendering.
+*   **Purpose:** A modular visual pipeline that translates geometric data into specific backend instructions.
+*   **Composition Core (`RenderCore`):** Shared internal state for all renderers (Viewport, Camera, Logical Size).
+*   **Universal Interface (`trait Renderer`):** Agnostic contract for drawing primitives, text, and managing clipping.
+*   **Sub-systems:** GUI Renderer (WGPU), TUI Renderer (Terminal), and Headless testing buffer.
 
 ### Layer 1: Hardware Abstraction Layer (HAL)
 *   **Purpose:** Native interface with the environment (OS or Terminal).
+*   **Composition Core (`PlatformCore`):** Shared state for all platforms (App root, Scene reference, Cursor).
+*   **Standardized Lifecycle (`trait PlatformRunner`):** Unified initialization and execution loop.
 *   **GUI HAL:** WGPU Device & Winit Windowing.
-*   **TUI HAL:** Terminal Raw Mode & Input Capture (via Crossterm/Termion).
-*   **A11y Bridge:** Integration with OS Accessibility services (AccessKit).
+*   **TUI HAL:** Terminal Raw Mode & Input Capture.
 
 ---
 
-## 🔄 The "Agnostic Bridge" Principle
+## 🔄 Architectural Principles
 
-The power of Rupaui lies in the boundary between **Layer 3** and **Layer 2**. 
-- Layers 3 through 9 are **Platform-Agnostic**: They describe *what* the UI is and *how* it behaves.
-- Layers 1 and 2 are **Platform-Specific**: They handle *how* the UI is actually drawn and *where* input comes from.
-
-This modularity allows you to write a `Button` once and render it as a hardware-accelerated 4K button or a `[ Click Me ]` text string in a Linux terminal.
-
----
-
-## 🛠 Engineering Principles
-
-1.  **Utility-First, Semantic-Support:** Style Components (L7) using Utilities (L9).
-2.  **Strict Separation of Concerns (SOC):** Logic (L5) must never depend on the Rendering Engine (L2).
-3.  **Reactive Integrity:** UI updates must be a pure side-effect of Signal (L4) changes.
-4.  **Accessible by Default:** Every component must expose metadata regardless of the backend (GUI/TUI).
-5.  **Multi-Backend Scalability:** Adding support for new platforms (e.g., VR/AR) only requires implementing Layers 1 and 2.
+1.  **Composition over Inheritance:** High-level platform shells (GUI/TUI) compose low-level cores (`PlatformCore`, `RenderCore`) to eliminate redundancy.
+2.  **Agnostic Bridge:** Layers 3-9 are platform-independent; only Layers 1-2 contain hardware-specific code.
+3.  **Universal Language:** Standardized enums like `InputEvent` and traits like `Renderer` ensure the framework speaks a single language regardless of the output target.
+4.  **Strict SOC:** Logic (Brain) never touches Rendering (Body).
+5.  **Spatial Integrity:** Layer 3 acts as the single source of truth for all geometry and structural relationships.
+6.  **Reactive Integrity:** UI updates are side-effects of Signal changes, managed by the fine-grained reactivity layer.

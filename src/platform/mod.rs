@@ -9,18 +9,43 @@ pub mod tui;
 
 use crate::core::component::Component;
 use crate::core::plugin::PluginRegistry;
+use crate::scene::SceneCore;
+use crate::utils::vector::Vec2;
 use crate::utils::Theme;
 use std::error::Error;
+use taffy::prelude::NodeId;
 
-/// The standard interface for any platform backend (GUI, TUI, Headless).
+/// Common state shared across all platform backends (GUI, TUI, etc).
+/// This is an example of "Composition over Inheritance".
+pub struct PlatformCore {
+    pub app_name: String,
+    pub root: Option<Box<dyn Component>>,
+    pub scene: SceneCore,
+    pub cursor_pos: Vec2,
+}
+
+impl PlatformCore {
+    pub fn new(app_name: String, root: Option<Box<dyn Component>>) -> Self {
+        Self {
+            app_name,
+            root,
+            scene: SceneCore::new(),
+            cursor_pos: Vec2::zero(),
+        }
+    }
+
+    /// Common logic to compute the layout tree via SceneCore.
+    pub fn compute_layout(&mut self, width: f32, height: f32) -> Option<NodeId> {
+        if let Some(ref root) = self.root {
+            return Some(self.scene.resolve(root.as_ref(), width, height));
+        }
+        None
+    }
+}
+
 pub trait PlatformRunner {
-    /// Initialize the backend (Open window, raw mode, etc).
     fn initialize(&mut self) -> Result<(), Box<dyn Error>>;
-    
-    /// Enter the main execution loop.
     fn run(self) -> Result<(), Box<dyn Error>>;
-    
-    /// Request a UI redraw from the platform.
     fn request_redraw(&self);
 }
 
@@ -29,16 +54,10 @@ pub enum RupauiEvent {
     RequestRedraw,
 }
 
-/// Global hook to request a redraw. Implementation is platform-dependent.
 pub fn request_redraw() {
     #[cfg(feature = "gui")]
     if let Some(proxy) = gui::get_event_proxy() {
         let _ = proxy.send_event(RupauiEvent::RequestRedraw);
-    }
-    
-    #[cfg(feature = "tui")]
-    {
-        // TUI redraw logic handled via signal or polling
     }
 }
 
@@ -71,8 +90,7 @@ impl App {
     #[cfg(feature = "gui")]
     pub fn run(mut self) {
         self.bootstrap();
-        let runner = gui::RupauiRunner::new(self.name.clone(), self.root);
-        // gui runner uses winit's specific run_app which consumes the event loop
+        let runner = gui::GuiRunner::new(self.name.clone(), self.root);
         runner.run_app();
     }
 

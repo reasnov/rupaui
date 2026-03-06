@@ -8,12 +8,12 @@ use winit::window::WindowId;
 use winit::keyboard::{PhysicalKey, KeyCode as WinitKeyCode};
 
 use crate::core::component::Component;
-use crate::renderer::renderer::Renderer;
-use crate::layout::engine::LayoutEngine;
+use crate::renderer::Renderer as _;
+use crate::renderer::gui::renderer::Renderer;
 use crate::utils::vector::Vec2;
 use crate::platform::gui::window::Window;
-use crate::platform::dispatcher::EventDispatcher;
-use crate::platform::{RupauiEvent, events::*};
+use crate::platform::dispatcher::InputDispatcher;
+use crate::platform::{RupauiEvent, PlatformCore, events::*};
 
 static EVENT_PROXY: OnceLock<EventLoopProxy<RupauiEvent>> = OnceLock::new();
 
@@ -25,29 +25,19 @@ pub fn set_event_proxy(proxy: EventLoopProxy<RupauiEvent>) {
     let _ = EVENT_PROXY.set(proxy);
 }
 
-pub struct RupauiRunner {
+pub struct GuiRunner {
+    pub core: PlatformCore,
     pub window: Option<Window>,
     pub renderer: Option<Renderer>,
-    pub layout_engine: LayoutEngine,
-
-    pub app_name: String,
-    pub root: Option<Box<dyn Component>>,
-
-    pub cursor_pos: Vec2,
-    pub root_node: Option<taffy::prelude::NodeId>,
     pub scale_factor: f64,
 }
 
-impl RupauiRunner {
+impl GuiRunner {
     pub fn new(app_name: String, root: Option<Box<dyn Component>>) -> Self {
         Self {
+            core: PlatformCore::new(app_name, root),
             window: None,
             renderer: None,
-            layout_engine: LayoutEngine::new(),
-            app_name,
-            root,
-            cursor_pos: Vec2::zero(),
-            root_node: None,
             scale_factor: 1.0,
         }
     }
@@ -59,69 +49,44 @@ impl RupauiRunner {
     }
 
     fn handle_redraw(&mut self) {
-        let root = match &self.root {
-            Some(r) => r,
-            None => return,
-        };
-
         let (win_width, win_height) = self.window.as_ref().unwrap().size();
-        let root_node = self.layout_engine.compute(root.as_ref(), win_width as f32, win_height as f32);
-        self.root_node = Some(root_node);
+        let scene_node = self.core.compute_layout(win_width as f32, win_height as f32);
 
         let renderer = match &mut self.renderer {
             Some(r) => r,
             None => return,
         };
 
-        if let Ok((output, view, mut encoder)) = renderer.begin_frame() {
-            {
-                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("Rupaui UI Pass"),
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &view,
-                        resolve_target: None, depth_slice: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                            store: wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                    timestamp_writes: None,
-                    occlusion_query_set: None, multiview_mask: None,
-                });
-
+        if let Ok(()) = renderer.begin_frame() {
+            if let Some(ref root) = self.core.root {
                 root.paint(
                     renderer,
-                    &self.layout_engine.taffy,
-                    root_node,
+                    &self.core.scene.layout_engine.taffy,
+                    scene_node.raw(),
                     false, 
-                    &mut pass,
                     Vec2::zero(),
                 );
-
-                renderer.flush_batches(&mut pass);
             }
-            renderer.end_frame(output, encoder);
+            renderer.present();
         }
     }
 
-    fn dispatch_event(&mut self, event: RawInputEvent) {
-        if let (Some(root), Some(node)) = (&self.root, self.root_node) {
-            EventDispatcher::dispatch(
+    fn dispatch_event(&mut self, event: InputEvent) {
+        if let Some(ref root) = self.core.root {
+            InputDispatcher::dispatch(
                 event,
                 root.as_ref(),
-                &self.layout_engine.taffy,
-                node,
-                &mut self.cursor_pos,
+                &self.core.scene,
+                &mut self.core.cursor_pos,
             );
         }
     }
 }
 
-impl ApplicationHandler<RupauiEvent> for RupauiRunner {
+impl ApplicationHandler<RupauiEvent> for GuiRunner {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_none() {
-            let window = Window::new(event_loop, &self.app_name, 1024, 768).unwrap();
+            let window = Window::new(event_loop, &self.core.app_name, 1024, 768).unwrap();
             let renderer = pollster::block_on(Renderer::new(window.raw()));
             self.scale_factor = window.raw().scale_factor();
             self.window = Some(window);
@@ -139,16 +104,17 @@ impl ApplicationHandler<RupauiEvent> for RupauiRunner {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => {
-                self.dispatch_event(RawInputEvent::Quit);
+                self.dispatch_event(InputEvent::Quit);
                 event_loop.exit();
             }
             WindowEvent::Resized(size) => {
                 if let Some(renderer) = &mut self.renderer {
                     renderer.resize(size);
                 }
-                self.dispatch_event(RawInputEvent::Resize { 
+                let scale = self.scale_factor;
+                self.dispatch_event(InputEvent::Resize { 
                     size: Vec2::new(size.width as f32, size.height as f32),
-                    scale_factor: self.scale_factor 
+                    scale_factor: scale 
                 });
             }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
@@ -156,7 +122,7 @@ impl ApplicationHandler<RupauiEvent> for RupauiRunner {
             }
             WindowEvent::CursorMoved { position, .. } => {
                 let logical_pos = Vec2::new(position.x as f32, position.y as f32);
-                self.dispatch_event(RawInputEvent::PointerMove { position: logical_pos });
+                self.dispatch_event(InputEvent::PointerMove { position: logical_pos });
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 let btn = match button {
@@ -169,20 +135,21 @@ impl ApplicationHandler<RupauiEvent> for RupauiRunner {
                     ElementState::Pressed => ButtonState::Pressed,
                     ElementState::Released => ButtonState::Released,
                 };
-                self.dispatch_event(RawInputEvent::PointerButton { button: btn, state: st });
+                self.dispatch_event(InputEvent::PointerButton { button: btn, state: st });
             }
             WindowEvent::MouseWheel { delta, .. } => {
                 let scroll = match delta {
                     MouseScrollDelta::LineDelta(x, y) => Vec2::new(x, y * 20.0),
                     MouseScrollDelta::PixelDelta(pos) => Vec2::new(pos.x as f32, pos.y as f32),
                 };
-                self.dispatch_event(RawInputEvent::PointerScroll { delta: scroll });
+                self.dispatch_event(InputEvent::PointerScroll { delta: scroll });
             }
             WindowEvent::KeyboardInput { event: KeyEvent { physical_key, state, .. }, .. } => {
-                if let PhysicalKey::Code(WinitKeyCode::KeyQ) = physical_key {
-                    event_loop.exit();
+                if state == ElementState::Pressed {
+                    if let PhysicalKey::Code(WinitKeyCode::KeyQ) = physical_key {
+                        event_loop.exit();
+                    }
                 }
-                // Mapping other keys to standardized KeyCode...
             }
             WindowEvent::RedrawRequested => {
                 self.handle_redraw();

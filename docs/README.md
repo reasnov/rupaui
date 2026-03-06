@@ -7,6 +7,7 @@ Welcome to the **Rupaui Open Blueprint**. This documentation is structured to mi
 ## 🏁 Getting Started
 - [Project Overview](./overview.md) - Vision, key features, and tech stack.
 - [Philosophy](./philosophy.md) - Design principles and the 5 Artisan Pillars.
+- [Engineering Standards](./engineering-standards.md) - Coding conventions and architectural mandates.
 - [Architecture Overview](./architecture.md) - Conceptual map of the 9-layer stack.
 
 ---
@@ -16,21 +17,25 @@ Welcome to the **Rupaui Open Blueprint**. This documentation is structured to mi
 ### [01] Hardware Abstraction (HAL)
 - [Platform Orchestrator](./01-hal/platform-orchestrator.md) - `mod.rs` (App entry & bootstrap)
 - [Input Events](./01-hal/input-events.md) - `events.rs` (Universal schema)
-- [Event Dispatcher](./01-hal/event-dispatcher.md) - `dispatcher.rs` (Hit-testing & propagation)
+- [Input Dispatcher](./01-hal/input-dispatcher.md) - `dispatcher.rs` (Hit-testing & propagation)
 - [GUI Runner](./01-hal/gui-runner.md) - `gui/mod.rs` (Winit & frame loop)
 - [GUI Window](./01-hal/gui-window.md) - `gui/window.rs` (OS window management)
 - [TUI Runner](./01-hal/tui-runner.md) - `tui/mod.rs` (Crossterm & terminal loop)
 
 ### [02] Rendering Engine
-- [Text Engine](./02-rendering/text-engine.md) - Accelerated typography via Glyphon.
-- [Geometry](./02-rendering/geometry.md) - Backgrounds, borders, and SDF shapes.
-- [Effects & Shadows](./02-rendering/effects.md) - Real-time GPU visual effects.
-- [Filters](./02-rendering/filters.md) - Color and image processing shaders.
-- [Motion](./02-rendering/motion.md) - Transforms and GPU animations.
-- [Vector Math](./02-rendering/vector-math.md) - Core geometric primitives.
+- [Renderer Interface](./02-rendering/renderer-interface.md) - `mod.rs` (Unified contract)
+- [GUI Backend](./02-rendering/gui-backend.md) - `gui/mod.rs` (Aggregation)
+- [GUI Renderer](./02-rendering/gui-renderer.md) - `gui/renderer.rs` (WGPU Orchestrator)
+- [GUI Batcher](./02-rendering/gui-batcher.md) - `gui/batcher.rs` (Buffer management)
+- [GUI Pipeline](./02-rendering/gui-pipeline.md) - `gui/pipeline.rs` (WGPU state)
+- [GUI Text Renderer](./02-rendering/gui-text-renderer.md) - `gui/text_renderer.rs` (Glyphon)
+- [GUI Texture](./02-rendering/gui-texture.md) - `gui/texture.rs` (VRAM assets)
+- [TUI Renderer](./02-rendering/tui-renderer.md) - `tui/mod.rs` (ANSI painter)
 
-### [03] Layout Engine
-- [Flexbox & Grid](./03-layout/flexbox-grid.md) - Resolution via Taffy algorithm.
+### [03] Geometric Scene Layer
+- [Scene Core](./03-layout/scene-core.md) - `mod.rs` (Tree SSOT)
+- [Layout Engine](./03-layout/layout-engine.md) - `layout.rs` (Taffy integration)
+- [Spatial Awareness](./03-layout/spatial-awareness.md) - Hit-testing & Coordinates
 
 ### [04] Reactivity Layer
 - [Reactivity System](./04-reactivity/reactivity.md) - Signals, Memos, and change propagation.

@@ -197,7 +197,7 @@ impl Component for Button {
     fn mark_dirty(&self) { self.view.mark_dirty(); }
     fn clear_dirty(&self) { self.view.dirty.store(false, Ordering::Relaxed); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         self.view.compute_layout(taffy, parent, &self.logic)
     }
 
@@ -254,7 +254,7 @@ impl<'a> Component for ButtonGroup<'a> {
     fn is_dirty(&self) -> bool { self.dirty.load(Ordering::Relaxed) }
     fn mark_dirty(&self) { self.dirty.store(true, Ordering::Relaxed); }
     fn clear_dirty(&self) { self.dirty.store(false, Ordering::Relaxed); }
-    fn layout(&self, taffy: &mut TaffyTree<()>, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.get_node() {
             if self.is_dirty() { taffy.set_style(existing, self.style.borrow().to_taffy()).unwrap(); }
             existing
@@ -267,7 +267,7 @@ impl<'a> Component for ButtonGroup<'a> {
             let current_children = taffy.children(p).unwrap_or_default();
             if !current_children.contains(&node) { taffy.add_child(p, node).unwrap(); }
         }
-        self.children.layout_all(taffy, node);
+        self.children.layout_all(taffy, measurer, node);
         self.clear_dirty();
         node
     }
