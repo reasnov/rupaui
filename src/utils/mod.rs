@@ -1,4 +1,3 @@
-pub mod helper;
 pub mod id;
 pub mod vector;
 pub mod ui_helpers;
@@ -9,9 +8,12 @@ pub use vector::*;
 pub use ui_helpers::*;
 pub use state::*;
 
-// Common visual types re-exports
+// Note: Visual types and modifiers are now sourced from crate::style::utilities and crate::style::modifiers
+// following the 9-layer architecture. 
+// Standard re-exports for internal framework use:
+
 pub use crate::style::utilities::style::Style;
-pub use crate::style::modifiers::utilities::StyleModifier;
+pub use crate::style::modifiers::base::{StyleModifier, Stylable};
 pub use crate::style::modifiers::theme::{Theme, Variant, ColorMode};
 pub use crate::style::utilities::color::Color;
 pub use crate::style::utilities::attributes::Attributes;

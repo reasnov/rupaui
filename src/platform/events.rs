@@ -1,44 +1,55 @@
-use std::sync::Arc;
 use crate::utils::vector::Vec2;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum EventPhase {
-    Capture,
-    Target,
-    Bubble,
+/// Standardized input events that are platform-agnostic.
+/// Layer 1 (HAL) is responsible for converting native events into these types.
+#[derive(Debug, Clone, PartialEq)]
+pub enum RawInputEvent {
+    // Pointer Events (Mouse, Touch, Pen)
+    PointerMove { position: Vec2 },
+    PointerButton { button: PointerButton, state: ButtonState },
+    PointerScroll { delta: Vec2 },
+    
+    // Keyboard Events
+    Key { key: KeyCode, state: ButtonState, modifiers: Modifiers },
+    
+    // System Events
+    Resize { size: Vec2, scale_factor: f64 },
+    Focus(bool),
+    Quit,
 }
 
-pub struct UIEvent {
-    pub phase: EventPhase,
-    pub consumed: bool,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PointerButton {
+    Primary,   // Left click
+    Secondary, // Right click
+    Auxiliary, // Middle click
+    Extra(u16),
 }
 
-impl UIEvent {
-    pub fn new() -> Self {
-        Self { phase: EventPhase::Target, consumed: false }
-    }
-    pub fn stop_propagation(&mut self) {
-        self.consumed = true;
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ButtonState {
+    Pressed,
+    Released,
 }
 
-pub type ClickCallback = Arc<dyn Fn(&mut UIEvent) + Send + Sync>;
-pub type ScrollCallback = Arc<dyn Fn(&mut UIEvent, f32) + Send + Sync>;
-pub type DragCallback = Arc<dyn Fn(&mut UIEvent, Vec2) + Send + Sync>;
-
-#[derive(Default, Clone)]
-pub struct EventListeners {
-    pub on_click: Option<ClickCallback>,
-    pub on_scroll: Option<ScrollCallback>,
-    pub on_drag: Option<DragCallback>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Modifiers {
+    pub shift: bool,
+    pub ctrl: bool,
+    pub alt: bool,
+    pub logo: bool,
 }
 
-impl std::fmt::Debug for EventListeners {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("EventListeners").finish()
-    }
-}
-
-impl PartialEq for EventListeners {
-    fn eq(&self, _other: &Self) -> bool { true }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum KeyCode {
+    Char(char),
+    Enter,
+    Escape,
+    Tab,
+    Backspace,
+    ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
+    Home, End, PageUp, PageDown,
+    Delete, Insert,
+    F(u8),
+    Unknown,
 }

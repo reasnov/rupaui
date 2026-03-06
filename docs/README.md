@@ -1,114 +1,68 @@
-# Rupaui Documentation Index
+# Rupaui Documentation Index 🎨
 
-Welcome to the **Rupaui** documentation. Rupaui is a modern, cross-platform UI framework built with Rust, designed for artisans who value semantic structure and utility-first flexibility.
+Welcome to the **Rupaui Open Blueprint**. This documentation is structured to mirror the 9-layer architecture of the framework, providing total transparency from hardware abstraction to design system composition.
 
-## 🚀 Architecture Pipeline
+---
 
-```mermaid
-flowchart TD
+## 🏁 Getting Started
+- [Project Overview](./overview.md) - Vision, key features, and tech stack.
+- [Philosophy](./philosophy.md) - Design principles and the 5 Artisan Pillars.
+- [Architecture Overview](./architecture.md) - Conceptual map of the 9-layer stack.
 
-A[Application Start] --> B[Create App Instance]
+---
 
-B --> C[Register Plugins]
-C --> D[Build Root Component]
+## 🏗️ The 9-Layer Blueprint
 
-D --> E[Initialize Event Loop]
-E --> F[Create Window winit]
+### [01] Hardware Abstraction (HAL)
+- [Platform Orchestrator](./01-hal/platform-orchestrator.md) - `mod.rs` (App entry & bootstrap)
+- [Input Events](./01-hal/input-events.md) - `events.rs` (Universal schema)
+- [Event Dispatcher](./01-hal/event-dispatcher.md) - `dispatcher.rs` (Hit-testing & propagation)
+- [GUI Runner](./01-hal/gui-runner.md) - `gui/mod.rs` (Winit & frame loop)
+- [GUI Window](./01-hal/gui-window.md) - `gui/window.rs` (OS window management)
+- [TUI Runner](./01-hal/tui-runner.md) - `tui/mod.rs` (Crossterm & terminal loop)
 
-F --> G[Initialize GPU Renderer]
-G --> H[Initialize wgpu Device]
-H --> I[Create Render Pipeline]
+### [02] Rendering Engine
+- [Text Engine](./02-rendering/text-engine.md) - Accelerated typography via Glyphon.
+- [Geometry](./02-rendering/geometry.md) - Backgrounds, borders, and SDF shapes.
+- [Effects & Shadows](./02-rendering/effects.md) - Real-time GPU visual effects.
+- [Filters](./02-rendering/filters.md) - Color and image processing shaders.
+- [Motion](./02-rendering/motion.md) - Transforms and GPU animations.
+- [Vector Math](./02-rendering/vector-math.md) - Core geometric primitives.
 
-I --> J[Enter Event Loop]
+### [03] Layout Engine
+- [Flexbox & Grid](./03-layout/flexbox-grid.md) - Resolution via Taffy algorithm.
 
-J --> K{Event Type}
+### [04] Reactivity Layer
+- [Reactivity System](./04-reactivity/reactivity.md) - Signals, Memos, and change propagation.
 
-K -->|User Input| L[Platform Event Layer]
-K -->|System Event| M[Window Resize / Close]
-K -->|Redraw Request| N[Frame Pipeline]
+### [05] Component Architecture
+- [Attributes](./05-architecture/attributes.md) - Component metadata and metadata handling.
+- [Logic & View Pattern](./architecture.md#layer-5-component-architecture-layer-logic--view) - The core SOC standard.
 
-L --> O[Event Dispatch System]
-O --> P[Element Tree Event Propagation]
-P --> Q[Component Event Handlers]
+### [06] UI Primitives
+- [Div](./06-primitives/div.md) - The atomic layout block.
 
-Q --> R[State Mutation]
-R --> S[Mark Tree Dirty]
-S --> T[Request Redraw]
+### [07] Semantic Components
+- [Elements Library](./07-components/elements.md) - Standard UI kit (Buttons, Badge, etc).
+- [Forms & Input](./07-components/forms.md) - Reactive user input controls.
+- [Navigation](./07-components/navigation.md) - Navbar, Tabs, and Breadcrumbs.
+- [Content & Layout](./07-components/layout.md) - Sections and semantic grouping.
+- [Data Tables](./07-components/content.md) - Structured data displays.
+- [Vector Graphics](./07-components/svg.md) - SVG paths and icons.
+- [Theme Switcher](./07-components/theme-switcher.md) - Dynamic mode toggling.
+- [Identity](./07-components/brand.md) - Branding and logos.
 
-T --> J
+### [08] Composition Layer
+- [Control Flow](./08-composition/control-flow.md) - Conditional rendering and loops.
+- [Viewports](./08-composition/viewports.md) - Infinite canvas, zoom, and pan.
 
-M --> U[Resize Renderer]
-U --> J
-
-N --> V[Clear Previous Layout]
-
-V --> W[Build Element Tree]
-W --> X[Create Element Nodes]
-
-X --> Y[Layout Phase]
-
-Y --> Z[Traverse Element Tree]
-Z --> AA[Generate Taffy Nodes]
-AA --> AB[Compute Layout Taffy]
-
-AB --> AC[Render Phase]
-
-AC --> AD[Traverse Element Tree]
-AD --> AE[Generate Draw Commands]
-
-AE --> AF[Batch Renderer Commands]
-
-AF --> AG[Begin GPU Render Pass]
-
-AG --> AH[Execute Batches]
-AH --> AI[Draw Geometry]
-AI --> AJ[Render Text]
-AJ --> AK[Render SVG]
-
-AK --> AL[Submit Command Buffer]
-
-AL --> AM[Present Frame]
-
-AM --> AN[Request Next Frame]
-
-AN --> J
-```
-
-## 🏗 Core Framework
-- [Philosophy](./core/philosophy.md)
-- [State Management](./core/state-management.md)
-- [Plugins](./core/plugins.md)
-- [Extending Rupaui](./core/extending.md)
-- [Platforms](./core/platforms.md)
-- [Control Flow](./core/control-flow.md)
-- [Attributes](./core/attributes.md)
-- [Vector Math](./core/vector-math.md)
-
-## 🎨 DNA Visual (Styling)
-- [Styling Overview](./styling/styling.md)
-- [Theme Engine](./styling/theme.md)
-- [Modular Styling](./styling/modular-styling.md)
-- [Spacing & Sizing](./styling/spacing-sizing.md)
-- [Background & Border](./styling/background-border.md)
-- [Typography](./styling/typography.md)
-- [Effects & Shadows](./styling/effects.md)
-- [Filters](./styling/filters.md)
-- [Motion & Transform](./styling/motion-transform.md)
-- [Interactivity & SVG](./styling/interactivity-svg.md)
-- [Layout System](./styling/layout.md)
-- [Utility Helpers](./styling/helpers.md)
-- [Variants](./styling/variants.md)
-- [Tables](./styling/tables.md)
-
-## 🧩 Components
-- [Brand](./components/brand.md)
-- [Div](./components/div.md)
-- [Elements](./components/elements.md)
-- [Forms](./components/forms.md)
-- [Layout](./components/layout.md)
-- [Section](./components/section.md)
-- [SVG Drawing](./components/svg-drawing.md)
-- [Text](./components/text.md)
-- [Theme Switcher](./components/theme-switcher.md)
-- [Viewport](./components/viewport.md)
-- [Window](./components/window.md)
+### [09] Ecosystem & Design System
+- [Styling API](./09-ecosystem/styling-api.md) - Functional, utility-first styling.
+- [Theme Engine](./09-ecosystem/theme-engine.md) - DNA Visual and global themes.
+- [Artisan Scale](./09-ecosystem/scale-system.md) - The 10-step unified scale.
+- [Modular Styling](./09-ecosystem/modular-styling.md) - Style composition with tuples.
+- [Interactivity](./09-ecosystem/interactivity.md) - Events, hover, and active states.
+- [Plugins](./09-ecosystem/plugins.md) - Extending the framework.
+- [Extending](./09-ecosystem/extending.md) - Guide for library developers.
+- [Helpers](./09-ecosystem/helpers.md) - Design system utility helpers.
+- [Variants](./09-ecosystem/variants.md) - Semantic variant system (Primary, Danger, etc).
