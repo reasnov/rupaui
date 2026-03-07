@@ -21,7 +21,10 @@ pub fn request_redraw() {
 }
 
 /// Common state shared across all platform backends (GUI, TUI, etc).
-/// This is wrapped in Arc<RwLock> for thread-safety.
+use crate::support::error::{DiagnosticCenter, RupauiError};
+
+static GLOBAL_REDRAW_PROXY: RwLock<Option<Box<dyn Fn() + Send + Sync>>> = RwLock::new(None);
+...
 pub struct PlatformCore {
     pub metadata: AppMetadata,
     pub root: Option<Box<dyn Component>>,
@@ -30,6 +33,8 @@ pub struct PlatformCore {
     pub pointer_capture: Option<String>,
     pub focused_id: Option<String>,
     pub a11y_enabled: bool,
+    pub debug: bool,
+    pub diagnostic_center: Option<DiagnosticCenter>,
     // Allows plugins or debuggers to intercept events
     pub event_listeners: Vec<Arc<dyn Fn(&crate::platform::events::InputEvent) + Send + Sync>>,
 }
@@ -46,10 +51,18 @@ impl PlatformCore {
             pointer_capture: None,
             focused_id: None,
             a11y_enabled: true,
+            debug: false,
+            diagnostic_center: None,
             event_listeners: Vec::new(),
         }
     }
 
+    /// Reports an error to the diagnostic center if it exists.
+    pub fn report_error(&self, error: RupauiError) {
+        if let Some(ref dc) = self.diagnostic_center {
+            dc.report(error);
+        }
+    }
     /// Common logic to compute the layout tree via SceneCore.
     pub fn compute_layout(&mut self, measurer: &dyn crate::renderer::TextMeasurer, width: f32, height: f32) -> Option<crate::scene::SceneNode> {
         if let Some(ref root) = self.root {

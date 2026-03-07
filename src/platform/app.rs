@@ -24,6 +24,8 @@ pub struct App {
     pub root: Option<Box<dyn Component>>,
     pub registry: PluginRegistry,
     pub body_style: Style,
+    pub debug: bool,
+    pub error_handler: Option<Arc<dyn Fn(crate::support::error::RupauiError) + Send + Sync>>,
     initial_listeners: Vec<Arc<dyn Fn(&crate::platform::events::InputEvent) + Send + Sync>>,
 }
 
@@ -41,8 +43,20 @@ impl App {
             root: None,
             registry: PluginRegistry::new(),
             body_style: Style::default(),
+            debug: false,
+            error_handler: None,
             initial_listeners: Vec::new(),
         }
+    }
+
+    pub fn debug(mut self, enabled: bool) -> Self {
+        self.debug = enabled;
+        self
+    }
+
+    pub fn on_error(mut self, handler: impl Fn(crate::support::error::RupauiError) + Send + Sync + 'static) -> Self {
+        self.error_handler = Some(Arc::new(handler));
+        self
     }
 
     pub fn title(mut self, title: impl Into<String>) -> Self {
@@ -104,6 +118,13 @@ impl App {
         let final_root = self.prepare_root();
         let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
         core_data.event_listeners = std::mem::take(&mut self.initial_listeners);
+        core_data.debug = self.debug;
+        
+        if let Some(ref handler) = self.error_handler {
+            core_data.diagnostic_center = Some(crate::support::error::DiagnosticCenter {
+                handler: Arc::clone(handler),
+            });
+        }
         
         let core = Arc::new(RwLock::new(core_data));
         let runner = GuiRunner::new(core);
@@ -116,6 +137,13 @@ impl App {
         let final_root = self.prepare_root();
         let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
         core_data.event_listeners = std::mem::take(&mut self.initial_listeners);
+        core_data.debug = self.debug;
+
+        if let Some(ref handler) = self.error_handler {
+            core_data.diagnostic_center = Some(crate::support::error::DiagnosticCenter {
+                handler: Arc::clone(handler),
+            });
+        }
 
         let core = Arc::new(RwLock::new(core_data));
         let mut runner = TuiRunner::new(core);

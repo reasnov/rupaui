@@ -147,6 +147,7 @@ impl TuiRunner {
         let mut pointer_capture = core.pointer_capture.take();
         let mut focused_id = core.focused_id.take();
         let event_listeners = core.event_listeners.clone();
+        let debug = core.debug;
 
         if let Some(ref root) = core.root {
             let root_ref: &dyn Component = root.as_ref();
@@ -158,6 +159,7 @@ impl TuiRunner {
                 &mut pointer_capture,
                 &mut focused_id,
                 &event_listeners,
+                debug,
             );
         }
 

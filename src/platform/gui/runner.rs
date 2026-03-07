@@ -109,6 +109,7 @@ impl GuiRunner {
                 &mut pointer_capture,
                 &mut focused_id,
                 &event_listeners,
+                core.debug,
             );
         }
 

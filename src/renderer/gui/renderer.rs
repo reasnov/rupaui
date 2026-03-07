@@ -167,6 +167,30 @@ impl BaseRenderer for Renderer {
         self.text_entries.push(StoredText { buffer, pos: Vec2::new(tx, ty), color });
     }
 
+    fn draw_outline(&mut self, x: f32, y: f32, w: f32, h: f32, color: [f32; 4]) {
+        let scale = self.core.scale_factor;
+        let tx = (x + self.core.camera_offset.x) * self.core.camera_zoom * scale; 
+        let ty = (y + self.core.camera_offset.y) * self.core.camera_zoom * scale;
+        let tw = w * self.core.camera_zoom * scale; 
+        let th = h * self.core.camera_zoom * scale;
+        
+        let x_norm = (tx / self.core.logical_size.x) * 2.0 - 1.0; 
+        let y_norm = 1.0 - (ty / self.core.logical_size.y) * 2.0;
+        let w_norm = (tw / self.core.logical_size.x) * 2.0; 
+        let h_norm = (th / self.core.logical_size.y) * 2.0;
+        
+        // Outline mode (implemented in shader or by drawing 4 thin lines)
+        // For now, let's draw it as a rect with a special flag if the shader supports it, 
+        // or just a very thin rect for simplicity in this step.
+        let size = [tw, th];
+        self.batcher.add_rect([
+            Vertex { position: [x_norm, y_norm], color, tex_coords: [0.0, 0.0], rect_size: size, radius: 0.0, mode: 1 }, // Mode 1 for Outline
+            Vertex { position: [x_norm + w_norm, y_norm], color, tex_coords: [1.0, 0.0], rect_size: size, radius: 0.0, mode: 1 },
+            Vertex { position: [x_norm + w_norm, y_norm - h_norm], color, tex_coords: [1.0, 1.0], rect_size: size, radius: 0.0, mode: 1 },
+            Vertex { position: [x_norm, y_norm - h_norm], color, tex_coords: [0.0, 1.0], rect_size: size, radius: 0.0, mode: 1 },
+        ]);
+    }
+
     fn push_clip(&mut self, _x: f32, _y: f32, _w: f32, _h: f32) {}
     fn pop_clip(&mut self) {}
 

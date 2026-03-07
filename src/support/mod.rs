@@ -1,10 +1,12 @@
 pub mod id;
 pub mod vector;
 pub mod state;
+pub mod error;
 
 pub use id::*;
 pub use vector::*;
 pub use state::*;
+pub use error::*;
 
 // Common visual types re-exports from other layers for internal support
 pub use crate::style::utilities::style::Style;

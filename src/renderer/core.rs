@@ -34,6 +34,7 @@ pub trait Renderer: TextMeasurer {
 
     fn draw_rect(&mut self, x: f32, y: f32, width: f32, height: f32, color: [f32; 4], radius: f32);
     fn draw_text(&mut self, text: &str, x: f32, y: f32, width: f32, size: f32, color: [f32; 4], align: TextAlign);
+    fn draw_outline(&mut self, x: f32, y: f32, width: f32, height: f32, color: [f32; 4]);
     
     fn push_clip(&mut self, x: f32, y: f32, width: f32, height: f32);
     fn pop_clip(&mut self);

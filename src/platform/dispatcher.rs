@@ -55,9 +55,13 @@ impl InputDispatcher {
         pointer_capture: &mut Option<String>,
         focused_id: &mut Option<String>,
         event_listeners: &[Arc<dyn Fn(&InputEvent) + Send + Sync>],
+        debug: bool,
     ) {
+        if debug {
+            log::debug!("Dispatching event: {:?}", event);
+        }
         // Trigger all registered plugin hooks first
-        for listener in event_listeners {
+    ...
             listener(&event);
         }
 
