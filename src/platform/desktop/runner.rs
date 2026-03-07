@@ -82,6 +82,7 @@ impl DesktopRunner {
         };
         
         let mut cursor_pos = core.cursor_pos;
+        let mut requested_cursor = core.requested_cursor;
         let mut pointer_capture = core.pointer_capture.take();
         let mut focused_id = core.focused_id.take();
         let event_listeners = core.event_listeners.clone();
@@ -92,7 +93,9 @@ impl DesktopRunner {
                 event,
                 root_ref,
                 &core.scene,
+                &core.viewport,
                 &mut cursor_pos,
+                &mut requested_cursor,
                 &mut pointer_capture,
                 &mut focused_id,
                 &event_listeners,
@@ -100,8 +103,26 @@ impl DesktopRunner {
             );
         }
 
+        // Handle Cursor change request
+        if core.requested_cursor != requested_cursor {
+            if let Some(window) = &self.window {
+                let winit_cursor = match requested_cursor {
+                    CursorIcon::Default => winit::window::CursorIcon::Default,
+                    CursorIcon::Pointer => winit::window::CursorIcon::Pointer,
+                    CursorIcon::Text => winit::window::CursorIcon::Text,
+                    CursorIcon::Grab => winit::window::CursorIcon::Grab,
+                    CursorIcon::Grabbing => winit::window::CursorIcon::Grabbing,
+                    CursorIcon::NotAllowed => winit::window::CursorIcon::NotAllowed,
+                    CursorIcon::Wait => winit::window::CursorIcon::Wait,
+                    CursorIcon::Crosshair => winit::window::CursorIcon::Crosshair,
+                };
+                window.set_cursor_icon(winit_cursor);
+            }
+        }
+
         // Put things back
         core.cursor_pos = cursor_pos;
+        core.requested_cursor = requested_cursor;
         core.pointer_capture = pointer_capture;
         core.focused_id = focused_id;
         
@@ -113,9 +134,22 @@ impl DesktopRunner {
 }
 
 impl PlatformRunner for DesktopRunner {
-    fn run(mut self) -> Result<(), crate::support::error::RupauiError> {
+    fn sync_metadata(&self, metadata: &AppMetadata) -> Result<(), crate::support::error::Error> {
+        if let Some(window) = &self.window {
+            window.set_title(&metadata.title);
+            
+            if let Some(ref icon_source) = metadata.icon {
+                if let Err(e) = crate::platform::desktop::infra::DesktopInfra::set_icon(window, icon_source) {
+                    log::error!("Desktop: Failed to set window icon: {}", e);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn run(mut self) -> Result<(), crate::support::error::Error> {
         let event_loop = EventLoop::<PlatformEvent>::with_user_event().build()
-            .map_err(|e| crate::support::error::RupauiError::Platform(format!("Failed to build event loop: {}", e)))?;
+            .map_err(|e| crate::support::error::Error::Platform(format!("Failed to build event loop: {}", e)))?;
             
         let proxy = event_loop.create_proxy();
         register_redraw_proxy(move || {
@@ -123,7 +157,7 @@ impl PlatformRunner for DesktopRunner {
         });
 
         event_loop.run_app(&mut self)
-            .map_err(|e| crate::support::error::RupauiError::Platform(format!("Failed to run app: {}", e)))
+            .map_err(|e| crate::support::error::Error::Platform(format!("Failed to run app: {}", e)))
     }
 }
 
@@ -142,6 +176,7 @@ impl ApplicationHandler<PlatformEvent> for DesktopRunner {
             let title = core_lock.metadata.title.clone();
             match crate::platform::desktop::infra::DesktopInfra::create_window(event_loop, &title, 1024, 768) {
                 Ok(window) => {
+                    let _ = self.sync_metadata(&core_lock.metadata);
                     let size = window.inner_size();
                     let scale = window.scale_factor();
                     let renderer = pollster::block_on(Renderer::new(window.clone(), size.width, size.height, scale as f32));

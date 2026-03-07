@@ -31,6 +31,27 @@ Technical requirements and internal infrastructure for each supported target.
 
 ---
 
+## ⚙️ Metadata Configuration
+Configure your application's identity and appearance using the `App` manifest API.
+
+### Identity & Branding
+```rust
+App::new("Artisan Pro")
+    .author("Reasnov")
+    .version("1.2.0")
+    .icon(IconSource::Path("assets/logo.png".into()))
+```
+
+### Display & Theming (PWA / Manifest)
+These properties are synchronized with the browser meta tags or mobile system bars.
+```rust
+App::new("Demo")
+    .theme_color([0.1, 0.1, 0.1, 1.0]) // Dark theme color
+    .display_mode(DisplayMode::Standalone) // PWA Standalone
+```
+
+---
+
 ## 🏗️ Platform Runners (HAL)
 The low-level shells responsible for hardware abstraction and event mapping.
 

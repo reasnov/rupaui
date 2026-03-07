@@ -17,12 +17,30 @@ use crate::platform::mobile::MobileRunner;
 use crate::platform::runner::PlatformRunner;
 
 #[derive(Debug, Clone)]
+pub enum IconSource {
+    Path(String),
+    Bytes(Vec<u8>),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DisplayMode {
+    Browser,
+    Standalone,
+    MinimalUi,
+    Fullscreen,
+}
+
+#[derive(Debug, Clone)]
 pub struct AppMetadata {
     pub title: String,
     pub version: String,
     pub description: String,
     pub author: String,
     pub identifier: String, // e.g. "com.reasnov.myapp"
+    pub icon: Option<IconSource>,
+    pub theme_color: Option<[f32; 4]>,
+    pub background_color: Option<[f32; 4]>,
+    pub display_mode: DisplayMode,
 }
 
 pub struct App {
@@ -31,7 +49,8 @@ pub struct App {
     pub registry: PluginRegistry,
     pub body_style: Style,
     pub debug: bool,
-    pub error_handler: Option<Arc<dyn Fn(crate::support::error::RupauiError) + Send + Sync>>,
+    pub initial_overlays: Vec<Box<dyn Component>>,
+    pub error_handler: Option<Arc<dyn Fn(crate::support::error::Error) + Send + Sync>>,
     initial_listeners: Vec<Arc<dyn Fn(&crate::platform::events::InputEvent) + Send + Sync>>,
 }
 
@@ -45,11 +64,16 @@ impl App {
                 description: String::new(),
                 author: "".into(),
                 identifier: format!("org.rupaui.{}", t.to_lowercase().replace(" ", "-")),
+                icon: None,
+                theme_color: None,
+                background_color: None,
+                display_mode: DisplayMode::Browser,
             },
             root: None,
             registry: PluginRegistry::new(),
             body_style: Style::default(),
             debug: false,
+            initial_overlays: Vec::new(),
             error_handler: None,
             initial_listeners: Vec::new(),
         }
@@ -60,7 +84,7 @@ impl App {
         self
     }
 
-    pub fn on_error(mut self, handler: impl Fn(crate::support::error::RupauiError) + Send + Sync + 'static) -> Self {
+    pub fn on_error(mut self, handler: impl Fn(crate::support::error::Error) + Send + Sync + 'static) -> Self {
         self.error_handler = Some(Arc::new(handler));
         self
     }
@@ -90,6 +114,26 @@ impl App {
         self
     }
 
+    pub fn icon(mut self, source: IconSource) -> Self {
+        self.metadata.icon = Some(source);
+        self
+    }
+
+    pub fn theme_color(mut self, rgba: [f32; 4]) -> Self {
+        self.metadata.theme_color = Some(rgba);
+        self
+    }
+
+    pub fn background_color(mut self, rgba: [f32; 4]) -> Self {
+        self.metadata.background_color = Some(rgba);
+        self
+    }
+
+    pub fn display_mode(mut self, mode: DisplayMode) -> Self {
+        self.metadata.display_mode = mode;
+        self
+    }
+
     /// Style the implicit root 'Body' element (Viewport).
     pub fn style(mut self, modifier: impl crate::style::modifiers::base::StyleModifier) -> Self {
         modifier.apply(&mut self.body_style);
@@ -106,23 +150,33 @@ impl App {
         self
     }
 
+    pub fn overlay(mut self, component: impl Component + 'static) -> Self {
+        self.initial_overlays.push(Box::new(component));
+        self
+    }
+
     fn bootstrap(&mut self) {
         let _ = Theme::current();
         let registry = std::mem::replace(&mut self.registry, PluginRegistry::new());
         registry.build_all(self);
     }
 
-    fn prepare_root(&mut self) -> Box<dyn Component> {
+    fn prepare_root(&mut self, viewport: crate::support::state::Signal<crate::support::vector::Vec2>) -> Box<dyn Component> {
         // Automatically wrap user root into an implicit internal Body primitive
-        let body = crate::core::body::Body::new(self.body_style.clone(), self.root.take());
+        let mut body = crate::core::body::Body::new(self.body_style.clone(), self.root.take());
+        body.logic.viewport = viewport;
+        for overlay in self.initial_overlays.drain(..) {
+            body.logic.add_overlay(overlay);
+        }
         Box::new(body)
     }
 
     #[cfg(feature = "desktop")]
     pub fn run(mut self) {
         self.bootstrap();
-        let final_root = self.prepare_root();
-        let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
+        let mut core_data = PlatformCore::new(self.metadata.clone(), None);
+        let final_root = self.prepare_root(core_data.viewport.clone());
+        core_data.root = Some(final_root);
         core_data.event_listeners = std::mem::take(&mut self.initial_listeners);
         core_data.debug = self.debug;
         
@@ -133,17 +187,18 @@ impl App {
         }
         
         let core = Arc::new(RwLock::new(core_data));
-        let runner = DesktopRunner::new(core);
+        let runner = DesktopRunner::new(Arc::clone(&core));
         if let Err(e) = runner.run() {
-            eprintln!("Desktop Error: {}", e);
+            log::error!("Desktop Error: {}", e);
         }
     }
 
     #[cfg(feature = "terminal")]
     pub fn run_terminal(mut self) {
         self.bootstrap();
-        let final_root = self.prepare_root();
-        let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
+        let mut core_data = PlatformCore::new(self.metadata.clone(), None);
+        let final_root = self.prepare_root(core_data.viewport.clone());
+        core_data.root = Some(final_root);
         core_data.event_listeners = std::mem::take(&mut self.initial_listeners);
         core_data.debug = self.debug;
 
@@ -154,39 +209,41 @@ impl App {
         }
 
         let core = Arc::new(RwLock::new(core_data));
-        let runner = TerminalRunner::new(core);
+        let runner = TerminalRunner::new(Arc::clone(&core));
         if let Err(e) = runner.run() {
-            eprintln!("Terminal Error: {}", e);
+            log::error!("Terminal Error: {}", e);
         }
     }
 
     #[cfg(feature = "web")]
     pub fn run_web(mut self, canvas_id: impl Into<String>) {
         self.bootstrap();
-        let final_root = self.prepare_root();
-        let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
+        let mut core_data = PlatformCore::new(self.metadata.clone(), None);
+        let final_root = self.prepare_root(core_data.viewport.clone());
+        core_data.root = Some(final_root);
         core_data.event_listeners = std::mem::take(&mut self.initial_listeners);
         core_data.debug = self.debug;
         
         let core = Arc::new(RwLock::new(core_data));
-        let runner = WebRunner::new(core, canvas_id);
+        let runner = WebRunner::new(Arc::clone(&core), canvas_id);
         if let Err(e) = runner.run() {
-            eprintln!("Web Error: {}", e);
+            log::error!("Web Error: {}", e);
         }
     }
 
     #[cfg(feature = "mobile")]
     pub fn run_mobile(mut self) {
         self.bootstrap();
-        let final_root = self.prepare_root();
-        let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
+        let mut core_data = PlatformCore::new(self.metadata.clone(), None);
+        let final_root = self.prepare_root(core_data.viewport.clone());
+        core_data.root = Some(final_root);
         core_data.event_listeners = std::mem::take(&mut self.initial_listeners);
         core_data.debug = self.debug;
         
         let core = Arc::new(RwLock::new(core_data));
-        let runner = MobileRunner::new(core);
+        let runner = MobileRunner::new(Arc::clone(&core));
         if let Err(e) = runner.run() {
-            eprintln!("Mobile Error: {}", e);
+            log::error!("Mobile Error: {}", e);
         }
     }
 }

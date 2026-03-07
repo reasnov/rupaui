@@ -9,6 +9,9 @@ pub trait Component: Send + Sync {
     fn id(&self) -> &str;
     fn children(&self) -> Vec<&dyn Component>;
 
+    /// Allows downcasting trait objects to concrete types.
+    fn as_any(&self) -> &dyn std::any::Any;
+
     // Layout Infrastructure
     fn get_node(&self) -> Option<SceneNode>;
     fn set_node(&self, node: SceneNode);
@@ -38,6 +41,7 @@ pub trait Component: Send + Sync {
     fn on_key(&self, _event: &mut UIEvent, _key: crate::platform::events::KeyCode) {}
     fn on_text(&self, _event: &mut UIEvent, _text: &str) { }
     fn on_resize(&self, _event: &mut UIEvent, _size: Vec2) {}
+    fn on_safe_area(&self, _event: &mut UIEvent, _top: f32, _right: f32, _bottom: f32, _left: f32) {}
     
     // Lifecycle hooks
     fn on_mouse_enter(&self) {}

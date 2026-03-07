@@ -6,7 +6,7 @@ use winit::window::WindowId;
 use crate::platform::{SharedPlatformCore, runner::*, events::*, register_redraw_proxy};
 use crate::renderer::gui::renderer::Renderer;
 use crate::support::vector::Vec2;
-use crate::support::error::RupauiError;
+use crate::support::error::Error;
 
 #[cfg(target_arch = "wasm32")]
 use crate::platform::web::infra::WebInfra;
@@ -65,10 +65,34 @@ impl WebRunner {
 }
 
 impl PlatformRunner for WebRunner {
-    fn run(self) -> Result<(), RupauiError> {
+    fn sync_metadata(&self, metadata: &AppMetadata) -> Result<(), Error> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            if let Some(window) = web_sys::window() {
+                if let Some(document) = window.document() {
+                    document.set_title(&metadata.title);
+                }
+            }
+
+            if let Some(ref icon_source) = metadata.icon {
+                if let Err(e) = crate::platform::web::infra::WebInfra::set_favicon(icon_source) {
+                    log::error!("Web: Failed to set favicon: {}", e);
+                }
+            }
+
+            if let Some(theme_color) = metadata.theme_color {
+                if let Err(e) = crate::platform::web::infra::WebInfra::set_meta_theme_color(theme_color) {
+                    log::error!("Web: Failed to set theme color meta: {}", e);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn run(self) -> Result<(), Error> {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            return Err(RupauiError::Platform("WebRunner can only run on WASM32 targets".into()));
+            return Err(Error::Platform("WebRunner can only run on WASM32 targets".into()));
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -77,7 +101,7 @@ impl PlatformRunner for WebRunner {
             use wasm_bindgen_futures::spawn_local;
 
             let event_loop = EventLoop::<PlatformEvent>::with_user_event().build()
-                .map_err(|e| RupauiError::Platform(e.to_string()))?;
+                .map_err(|e| Error::Platform(e.to_string()))?;
 
             let proxy = event_loop.create_proxy();
             register_redraw_proxy(move || {
@@ -86,7 +110,63 @@ impl PlatformRunner for WebRunner {
 
             // On Web, the event loop should be started asynchronously.
             log::info!("Rupaui: Starting Web Event Loop...");
-            event_loop.run_app(self).map_err(|e| RupauiError::Platform(e.to_string()))
+            event_loop.run_app(self).map_err(|e| Error::Platform(e.to_string()))
+        }
+    }
+    fn dispatch_event(&mut self, event: InputEvent) {
+        let mut core = match self.core.write() {
+            Ok(c) => c,
+            Err(_) => return,
+        };
+        
+        let mut cursor_pos = core.cursor_pos;
+        let mut requested_cursor = core.requested_cursor;
+        let mut pointer_capture = core.pointer_capture.take();
+        let mut focused_id = core.focused_id.take();
+        
+        if let Some(ref root) = core.root {
+            InputDispatcher::dispatch(
+                event,
+                root.as_ref(),
+                &core.scene,
+                &core.viewport,
+                &mut cursor_pos,
+                &mut requested_cursor,
+                &mut pointer_capture,
+                &mut focused_id,
+                &core.event_listeners,
+                core.debug,
+            );
+        }
+
+        // Map Rupaui cursor to CSS
+        if core.requested_cursor != requested_cursor {
+            #[cfg(target_arch = "wasm32")]
+            if let Some(window) = &self.window {
+                let css_cursor = match requested_cursor {
+                    CursorIcon::Default => "default",
+                    CursorIcon::Pointer => "pointer",
+                    CursorIcon::Text => "text",
+                    CursorIcon::Grab => "grab",
+                    CursorIcon::Grabbing => "grabbing",
+                    CursorIcon::NotAllowed => "not-allowed",
+                    CursorIcon::Wait => "wait",
+                    CursorIcon::Crosshair => "crosshair",
+                };
+                use winit::platform::web::WindowExtWebSys;
+                if let Some(canvas) = window.canvas() {
+                    let _ = canvas.style().set_property("cursor", css_cursor);
+                }
+            }
+        }
+
+        core.cursor_pos = cursor_pos;
+        core.requested_cursor = requested_cursor;
+        core.pointer_capture = pointer_capture;
+        core.focused_id = focused_id;
+        
+        if let Some(window) = &self.window {
+            window.request_redraw();
         }
     }
 }
@@ -110,6 +190,8 @@ impl ApplicationHandler<PlatformEvent> for WebRunner {
             
             match event_loop.create_window(attributes) {
                 Ok(window) => {
+                    let core_lock = self.core.read().unwrap();
+                    let _ = self.sync_metadata(&core_lock.metadata);
                     let size = window.inner_size();
                     let scale = window.scale_factor();
                     
@@ -146,8 +228,9 @@ impl ApplicationHandler<PlatformEvent> for WebRunner {
                     renderer.resize(size.width, size.height, self.window.as_ref().unwrap().scale_factor() as f32);
                 }
             }
-            // TODO: Map other browser events (Touch, Mouse, Key) to Rupaui InputEvent
-            _ => {}
+            _ => {
+                // log::trace!("Web: Unhandled browser event: {:?}", event);
+            }
         }
     }
 }

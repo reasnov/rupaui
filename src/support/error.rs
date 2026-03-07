@@ -2,7 +2,7 @@ use thiserror::Error;
 use std::sync::Arc;
 
 #[derive(Error, Debug, Clone)]
-pub enum RupauiError {
+pub enum Error {
     #[error("Layout engine failure: {0}")]
     Layout(String),
 
@@ -11,6 +11,9 @@ pub enum RupauiError {
 
     #[error("OS Platform failure: {0}")]
     Platform(String),
+
+    #[error("Unsupported feature: {0}")]
+    Unsupported(String),
 
     #[error("Component '{id}' failed: {message}")]
     Component { id: String, message: String },
@@ -25,15 +28,15 @@ pub enum RupauiError {
     Panic { location: String, message: String },
 }
 
-pub type Result<T> = std::result::Result<T, RupauiError>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// Global error subscriber for the framework.
 pub struct DiagnosticCenter {
-    pub handler: Arc<dyn Fn(RupauiError) + Send + Sync>,
+    pub handler: Arc<dyn Fn(Error) + Send + Sync>,
 }
 
 impl DiagnosticCenter {
-    pub fn report(&self, error: RupauiError) {
+    pub fn report(&self, error: Error) {
         (self.handler)(error);
     }
 }

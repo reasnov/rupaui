@@ -20,7 +20,7 @@ The HAL runners (GUI/TUI) are responsible for the conversion:
 
 - **Pointer Events:** `PointerMove`, `PointerButton`, `PointerScroll`.
 - **Keyboard Events:** `Key { key, state, modifiers }`.
-- **System Events:** `Resize`, `Focus`, `Quit`.
+- **System Events:** `Resize`, `SafeArea`, `Focus`, `Quit`.
 
 ---
 

@@ -6,7 +6,7 @@ use crate::platform::dispatcher::InputDispatcher;
 use crate::platform::{SharedPlatformCore, runner::PlatformRunner, events::*};
 use crate::renderer::tui::TuiRenderer;
 use crate::renderer::Renderer;
-use crate::support::error::RupauiError;
+use crate::support::error::Error;
 use super::terminal::TerminalInterface;
 
 pub struct TerminalRunner {
@@ -58,6 +58,7 @@ impl TerminalRunner {
         };
 
         let mut cursor_pos = core.cursor_pos;
+        let mut requested_cursor = core.requested_cursor;
         let mut pointer_capture = core.pointer_capture.take();
         let mut focused_id = core.focused_id.take();
         let event_listeners = core.event_listeners.clone();
@@ -69,7 +70,9 @@ impl TerminalRunner {
                 event,
                 root_ref,
                 &core.scene,
+                &core.viewport,
                 &mut cursor_pos,
+                &mut requested_cursor,
                 &mut pointer_capture,
                 &mut focused_id,
                 &event_listeners,
@@ -77,16 +80,31 @@ impl TerminalRunner {
             );
         }
 
-        // Put things back
+        // TUI doesn't support cursor icon changes usually, so we ignore it visually but update core.
         core.cursor_pos = cursor_pos;
+        core.requested_cursor = requested_cursor;
         core.pointer_capture = pointer_capture;
         core.focused_id = focused_id;
     }
 }
 
 impl PlatformRunner for TerminalRunner {
-    fn run(mut self) -> Result<(), RupauiError> {
-        self.terminal.setup().map_err(|e| RupauiError::Platform(e.to_string()))?;
+    fn sync_metadata(&self, metadata: &AppMetadata) -> Result<(), Error> {
+        // TUI doesn't always support title syncing, but we could use escape sequences.
+        log::info!("TUI: Setting terminal title to: {}", metadata.title);
+        if let Some(ref _icon) = metadata.icon {
+            log::debug!("TUI: Icon metadata received but not supported by backend.");
+        }
+        Ok(())
+    }
+
+    fn run(mut self) -> Result<(), Error> {
+        self.terminal.setup().map_err(|e| Error::Platform(e.to_string()))?;
+
+        {
+            let core_lock = self.core.read().unwrap();
+            let _ = self.sync_metadata(&core_lock.metadata);
+        }
 
         // For TUI, we don't have a winit event loop, but we could hook into the global proxy
         crate::platform::register_redraw_proxy(|| {
@@ -96,7 +114,7 @@ impl PlatformRunner for TerminalRunner {
         while !self.should_quit {
             self.handle_redraw();
 
-            if let Some(event) = self.terminal.poll_event(Duration::from_millis(16)).map_err(|e| RupauiError::Platform(e.to_string()))? {
+            if let Some(event) = self.terminal.poll_event(Duration::from_millis(16)).map_err(|e| Error::Platform(e.to_string()))? {
                 match event {
                     Event::Key(key) => {
                         let code = match key.code {
@@ -159,7 +177,7 @@ impl PlatformRunner for TerminalRunner {
             }
         }
 
-        self.terminal.restore().map_err(|e| RupauiError::Platform(e.to_string()))?;
+        self.terminal.restore().map_err(|e| Error::Platform(e.to_string()))?;
         Ok(())
     }
 }

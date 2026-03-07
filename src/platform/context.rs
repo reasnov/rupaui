@@ -1,8 +1,10 @@
 use std::sync::{Arc, RwLock};
 use crate::scene::SceneCore;
-use crate::support::vector::Vec2;
+use crate::support::{vector::Vec2, state::Signal};
 use crate::core::component::Component;
 use crate::platform::app::AppMetadata;
+use crate::platform::events::CursorIcon;
+use crate::support::error::{DiagnosticCenter, Error};
 
 static GLOBAL_REDRAW_PROXY: RwLock<Option<Box<dyn Fn() + Send + Sync>>> = RwLock::new(None);
 
@@ -21,15 +23,13 @@ pub fn request_redraw() {
 }
 
 /// Common state shared across all platform backends (GUI, TUI, etc).
-use crate::support::error::{DiagnosticCenter, RupauiError};
-
-static GLOBAL_REDRAW_PROXY: RwLock<Option<Box<dyn Fn() + Send + Sync>>> = RwLock::new(None);
-...
 pub struct PlatformCore {
     pub metadata: AppMetadata,
     pub root: Option<Box<dyn Component>>,
     pub scene: SceneCore,
+    pub viewport: Signal<Vec2>,
     pub cursor_pos: Vec2,
+    pub requested_cursor: CursorIcon,
     pub pointer_capture: Option<String>,
     pub focused_id: Option<String>,
     pub a11y_enabled: bool,
@@ -47,7 +47,9 @@ impl PlatformCore {
             metadata,
             root,
             scene: SceneCore::new(),
+            viewport: Signal::new(Vec2::zero()),
             cursor_pos: Vec2::zero(),
+            requested_cursor: CursorIcon::Default,
             pointer_capture: None,
             focused_id: None,
             a11y_enabled: true,
@@ -58,11 +60,23 @@ impl PlatformCore {
     }
 
     /// Reports an error to the diagnostic center if it exists.
-    pub fn report_error(&self, error: RupauiError) {
+    pub fn report_error(&self, error: Error) {
         if let Some(ref dc) = self.diagnostic_center {
             dc.report(error);
         }
     }
+
+    /// Adds a component to the global overlay stack of the root Body.
+    pub fn add_overlay(&self, component: Box<dyn Component>) {
+        if let Some(ref root) = self.root {
+            // Downcasting to Body to access its logic
+            if let Some(body) = root.as_any().downcast_ref::<crate::core::body::Body>() {
+                body.logic.add_overlay(component);
+                body.mark_dirty();
+            }
+        }
+    }
+
     /// Common logic to compute the layout tree via SceneCore.
     pub fn compute_layout(&mut self, measurer: &dyn crate::renderer::TextMeasurer, width: f32, height: f32) -> Option<crate::scene::SceneNode> {
         if let Some(ref root) = self.root {

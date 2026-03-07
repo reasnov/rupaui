@@ -9,6 +9,7 @@ use super::flex::{Flex as RupaFlex, FlexDirection as RupaFlexDirection, AlignIte
 use super::grid::Grid as RupaGrid;
 use super::sizing::Sizing as RupaSizing;
 use super::typography::TypographyStyle;
+use super::interactivity::Interactivity;
 use super::effects::Shadow;
 use super::filters::Filter;
 use crate::style::modifiers::animation::Motion;
@@ -27,6 +28,7 @@ pub struct Style {
     pub rounding: Rounding,
     pub outline: Outline,
     pub typography: TypographyStyle,
+    pub interactivity: Interactivity,
     pub shadow: Option<Shadow>,
     pub filter: Option<Filter>,
     pub motion: Option<Motion>,

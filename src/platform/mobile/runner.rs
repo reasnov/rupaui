@@ -6,7 +6,7 @@ use winit::window::WindowId;
 use crate::platform::{SharedPlatformCore, runner::*, events::*, register_redraw_proxy};
 use crate::renderer::gui::renderer::Renderer;
 use crate::support::vector::Vec2;
-use crate::support::error::RupauiError;
+use crate::support::error::Error;
 
 /// The production-ready execution shell for Mobile platforms (Android/iOS).
 /// Handles complex mobile lifecycles (Suspend/Resume/Low Memory).
@@ -59,9 +59,24 @@ impl MobileRunner {
 }
 
 impl PlatformRunner for MobileRunner {
-    fn run(self) -> Result<(), RupauiError> {
+    fn sync_metadata(&self, metadata: &AppMetadata) -> Result<(), Error> {
+        if let Some(window) = &self.window {
+            window.set_title(&metadata.title);
+            
+            if let Some(ref _icon) = metadata.icon {
+                log::warn!("Mobile: Dynamic icon sync with task switcher is currently unsupported.");
+            }
+
+            if let Some(_color) = metadata.theme_color {
+                log::warn!("Mobile: Status bar color synchronization is currently unsupported.");
+            }
+        }
+        Ok(())
+    }
+
+    fn run(self) -> Result<(), Error> {
         let event_loop = EventLoop::<PlatformEvent>::with_user_event().build()
-            .map_err(|e| RupauiError::Platform(e.to_string()))?;
+            .map_err(|e| Error::Platform(e.to_string()))?;
 
         let proxy = event_loop.create_proxy();
         register_redraw_proxy(move || {
@@ -69,7 +84,43 @@ impl PlatformRunner for MobileRunner {
         });
 
         log::info!("Rupaui: Starting Mobile Event Loop...");
-        event_loop.run_app(self).map_err(|e| RupauiError::Platform(e.to_string()))
+        event_loop.run_app(self).map_err(|e| Error::Platform(e.to_string()))
+    }
+    fn dispatch_event(&mut self, event: InputEvent) {
+        let mut core = match self.core.write() {
+            Ok(c) => c,
+            Err(_) => return,
+        };
+        
+        let mut cursor_pos = core.cursor_pos;
+        let mut requested_cursor = core.requested_cursor;
+        let mut pointer_capture = core.pointer_capture.take();
+        let mut focused_id = core.focused_id.take();
+        
+        if let Some(ref root) = core.root {
+            InputDispatcher::dispatch(
+                event,
+                root.as_ref(),
+                &core.scene,
+                &core.viewport,
+                &mut cursor_pos,
+                &mut requested_cursor,
+                &mut pointer_capture,
+                &mut focused_id,
+                &core.event_listeners,
+                core.debug,
+            );
+        }
+
+        // Mobile usually doesn't have a visible mouse cursor to change
+        core.cursor_pos = cursor_pos;
+        core.requested_cursor = requested_cursor;
+        core.pointer_capture = pointer_capture;
+        core.focused_id = focused_id;
+        
+        if let Some(window) = &self.window {
+            window.request_redraw();
+        }
     }
 }
 
@@ -82,6 +133,18 @@ impl ApplicationHandler<PlatformEvent> for MobileRunner {
             
             match event_loop.create_window(attributes) {
                 Ok(window) => {
+                    let core_lock = self.core.read().unwrap();
+                    let _ = self.sync_metadata(&core_lock.metadata);
+                    
+                    // Dispatch initial safe area
+                    let insets = crate::platform::mobile::infra::MobileInfra::get_safe_area_insets();
+                    self.dispatch_event(InputEvent::SafeArea { 
+                        top: insets.0, 
+                        right: insets.1, 
+                        bottom: insets.2, 
+                        left: insets.3 
+                    });
+
                     let size = window.inner_size();
                     let scale = window.scale_factor();
                     
@@ -124,7 +187,7 @@ impl ApplicationHandler<PlatformEvent> for MobileRunner {
                 }
             }
             WindowEvent::Touch(touch) => {
-                // TODO: Map native touch to Pointer events
+                log::warn!("Mobile: Native touch mapping to Pointer events is currently unsupported.");
                 log::trace!("Touch event: {:?}", touch);
             }
             _ => {}

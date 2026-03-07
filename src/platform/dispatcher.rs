@@ -1,6 +1,6 @@
 use crate::core::component::Component;
-use crate::support::vector::Vec2;
-use crate::platform::events::{InputEvent, PointerButton, ButtonState, Modifiers};
+use crate::support::{vector::Vec2, state::Signal};
+use crate::platform::events::{InputEvent, PointerButton, ButtonState, Modifiers, CursorIcon};
 use crate::scene::{SceneCore, HitDiscovery};
 use std::sync::Arc;
 
@@ -51,7 +51,9 @@ impl InputDispatcher {
         event: InputEvent,
         root: &dyn Component,
         scene: &SceneCore,
+        viewport: &Signal<Vec2>,
         cursor_pos: &mut Vec2,
+        requested_cursor: &mut CursorIcon,
         pointer_capture: &mut Option<String>,
         focused_id: &mut Option<String>,
         event_listeners: &[Arc<dyn Fn(&InputEvent) + Send + Sync>],
@@ -60,8 +62,9 @@ impl InputDispatcher {
         if debug {
             log::debug!("Dispatching event: {:?}", event);
         }
+        
         // Trigger all registered plugin hooks first
-    ...
+        for listener in event_listeners {
             listener(&event);
         }
 
@@ -83,7 +86,19 @@ impl InputDispatcher {
                     }
                 }
 
+                // Normal hit-testing (Top-down order ensures overlays are found first)
                 if let HitDiscovery::Found(hit) = scene.find_target(root, *cursor_pos) {
+                    // Resolve Cursor from topmost hovered component
+                    if let Some(target) = hit.path.last() {
+                        // This should ideally be generic, but for now we'll handle common ones
+                        // To be 100% correct, we'd need a style accessor on the Component trait.
+                        if let Some(body) = target.as_any().downcast_ref::<crate::core::body::Body>() {
+                             *requested_cursor = body.view.core.style.read().unwrap().interactivity.cursor;
+                        } else if let Some(div) = target.as_any().downcast_ref::<crate::primitives::div::Div>() {
+                             *requested_cursor = div.view.core.style.read().unwrap().interactivity.cursor;
+                        }
+                    }
+
                     let mut ui_ev = UIEvent::new(hit.local_pos);
                     for comp in hit.path.iter().rev() {
                         comp.on_drag(&mut ui_ev, delta); 
@@ -169,6 +184,7 @@ impl InputDispatcher {
                 }
             }
             InputEvent::Resize { size, .. } => {
+                viewport.set(size);
                 // Resize events are broadcasted to the whole tree
                 // This is a simple recursive broadcast
                 fn broadcast_resize(comp: &dyn Component, size: Vec2) {
@@ -179,6 +195,16 @@ impl InputDispatcher {
                     }
                 }
                 broadcast_resize(root, size);
+            }
+            InputEvent::SafeArea { top, right, bottom, left } => {
+                fn broadcast_safe_area(comp: &dyn Component, t: f32, r: f32, b: f32, l: f32) {
+                    let mut ui_ev = UIEvent::new(Vec2::zero());
+                    comp.on_safe_area(&mut ui_ev, t, r, b, l);
+                    for child in comp.children() {
+                        broadcast_safe_area(child, t, r, b, l);
+                    }
+                }
+                broadcast_safe_area(root, top, right, bottom, left);
             }
             InputEvent::Quit => {
                 // Handle application teardown logic if needed.

@@ -17,8 +17,22 @@ pub enum InputEvent {
     
     // System Events
     Resize { size: Vec2, scale_factor: f64 },
+    SafeArea { top: f32, right: f32, bottom: f32, left: f32 },
     Focus(bool),
     Quit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CursorIcon {
+    #[default]
+    Default,
+    Pointer,
+    Text,
+    Grab,
+    Grabbing,
+    NotAllowed,
+    Wait,
+    Crosshair,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
