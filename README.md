@@ -10,7 +10,7 @@ Rupaui is built on a modular 9-layer architecture, allowing the same UI logic to
 
 - **Utility-First, Semantic-Support:** Atomic styling with a functional API, backed by a clean, meaningful component hierarchy.
 - **Logic & View Architecture:** Strict separation between UI state (Logic) and rendering infrastructure (View).
-- **Universal Multi-Backend:** Native support for **GUI (WGPU/Winit)** and **TUI (Crossterm)** with 100% logic reuse.
+- **Universal Multi-Backend:** Native support for **Desktop (WGPU)**, **Terminal (Crossterm)**, **Web (WASM)**, and **Mobile (Android/iOS)** with 100% logic reuse.
 - **Signal-Based Reactivity:** Zero-overhead UI updates using a precise Signal/Memo engine.
 - **DNA Visual System:** Perceptually uniform colors via **OKLCH** and a 10-step unified scale for spacial integrity.
 - **High-Performance Rendering:** 2D Batching, SDF geometry, and hardware-accelerated typography.
@@ -47,7 +47,7 @@ fn main() {
                     .on_click(move |_| count.update(|v| *v += 1))
                 ))
         )
-        .run();
+        .run(); // Defaults to Desktop Runner
 }
 ```
 
@@ -57,7 +57,7 @@ fn main() {
 
 Rupaui is designed with total transparency. Explore our architecture from hardware to ecosystem:
 
-1.  [**HAL Layer**](./docs/01-hal/platform-orchestrator.md) - OS & Hardware abstraction.
+1.  [**HAL Layer**](./docs/01-hal/platform-orchestrator.md) - Target-specific Runners (Desktop, Terminal, Web, Mobile).
 2.  [**Rendering Engine**](./docs/02-rendering/renderer-interface.md) - WGPU and TUI painters.
 3.  [**Geometric Scene**](./docs/03-layout/scene-core.md) - Tree resolution and Taffy integration.
 4.  [**Reactivity**](./docs/04-reactivity/signals.md) - Signals and Change Propagation.

@@ -3,20 +3,20 @@ use crossterm::event::{Event, KeyCode as CrossKeyCode, MouseEventKind, MouseButt
 use crate::core::component::Component;
 use crate::support::vector::Vec2;
 use crate::platform::dispatcher::InputDispatcher;
-use crate::platform::events::*;
-use crate::platform::SharedPlatformCore;
+use crate::platform::{SharedPlatformCore, runner::PlatformRunner, events::*};
 use crate::renderer::tui::TuiRenderer;
 use crate::renderer::Renderer;
+use crate::support::error::RupauiError;
 use super::terminal::TerminalInterface;
 
-pub struct TuiRunner {
+pub struct TerminalRunner {
     pub core: SharedPlatformCore,
     pub terminal: TerminalInterface,
     pub renderer: TuiRenderer,
     pub should_quit: bool,
 }
 
-impl TuiRunner {
+impl TerminalRunner {
     pub fn new(core: SharedPlatformCore) -> Self {
         let terminal = TerminalInterface::new();
         let (cols, rows) = terminal.get_size();
@@ -28,26 +28,75 @@ impl TuiRunner {
         }
     }
 
-    pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.terminal.setup()?;
-
-        let mut _current_size = {
-            let (cols, rows) = self.terminal.get_size();
-            Vec2::new(cols as f32, rows as f32)
+    fn handle_redraw(&mut self) {
+        let mut core = match self.core.write() {
+            Ok(c) => c,
+            Err(_) => return,
         };
 
+        let scene_node = match core.compute_layout(&self.renderer, self.renderer.width() as f32, self.renderer.height() as f32) {
+            Some(node) => node,
+            None => return,
+        };
+
+        if let Some(ref root) = core.root {
+            root.paint(
+                &mut self.renderer,
+                &core.scene.layout_engine.taffy,
+                scene_node.raw(),
+                false, 
+                Vec2::zero(),
+            );
+        }
+        self.renderer.present();
+    }
+
+    fn dispatch_event(&mut self, event: InputEvent) {
+        let mut core = match self.core.write() {
+            Ok(c) => c,
+            Err(_) => return,
+        };
+
+        let mut cursor_pos = core.cursor_pos;
+        let mut pointer_capture = core.pointer_capture.take();
+        let mut focused_id = core.focused_id.take();
+        let event_listeners = core.event_listeners.clone();
+        let debug = core.debug;
+
+        if let Some(ref root) = core.root {
+            let root_ref: &dyn Component = root.as_ref();
+            InputDispatcher::dispatch(
+                event,
+                root_ref,
+                &core.scene,
+                &mut cursor_pos,
+                &mut pointer_capture,
+                &mut focused_id,
+                &event_listeners,
+                debug,
+            );
+        }
+
+        // Put things back
+        core.cursor_pos = cursor_pos;
+        core.pointer_capture = pointer_capture;
+        core.focused_id = focused_id;
+    }
+}
+
+impl PlatformRunner for TerminalRunner {
+    fn run(mut self) -> Result<(), RupauiError> {
+        self.terminal.setup().map_err(|e| RupauiError::Platform(e.to_string()))?;
+
         // For TUI, we don't have a winit event loop, but we could hook into the global proxy
-        // if we use a different event-driven strategy. For now, polling is used.
         crate::platform::register_redraw_proxy(|| {
-            // In a polling TUI, redraws happen every frame or can be signaled 
-            // by waking up the poll_event thread. For now, this is a no-op 
-            // as we poll frequently, but could write to a channel in the future.
+            // Placeholder for future event-driven TUI
         });
 
         while !self.should_quit {
             self.handle_redraw();
 
-            if let Some(event) = self.terminal.poll_event(Duration::from_millis(16))? {
+            if let Some(event) = self.terminal.poll_event(Duration::from_millis(16)).map_err(|e| RupauiError::Platform(e.to_string()))? {
                 match event {
                     Event::Key(key) => {
                         let code = match key.code {
@@ -110,62 +159,7 @@ impl TuiRunner {
             }
         }
 
-        self.terminal.restore()?;
+        self.terminal.restore().map_err(|e| RupauiError::Platform(e.to_string()))?;
         Ok(())
-    }
-
-    fn handle_redraw(&mut self) {
-        let mut core = match self.core.write() {
-            Ok(c) => c,
-            Err(_) => return,
-        };
-
-        let scene_node = match core.compute_layout(&self.renderer, self.renderer.width() as f32, self.renderer.height() as f32) {
-            Some(node) => node,
-            None => return,
-        };
-
-        if let Some(ref root) = core.root {
-            root.paint(
-                &mut self.renderer,
-                &core.scene.layout_engine.taffy,
-                scene_node.raw(),
-                false, 
-                Vec2::zero(),
-            );
-        }
-        self.renderer.present();
-    }
-
-    fn dispatch_event(&mut self, event: InputEvent) {
-        let mut core = match self.core.write() {
-            Ok(c) => c,
-            Err(_) => return,
-        };
-
-        let mut cursor_pos = core.cursor_pos;
-        let mut pointer_capture = core.pointer_capture.take();
-        let mut focused_id = core.focused_id.take();
-        let event_listeners = core.event_listeners.clone();
-        let debug = core.debug;
-
-        if let Some(ref root) = core.root {
-            let root_ref: &dyn Component = root.as_ref();
-            InputDispatcher::dispatch(
-                event,
-                root_ref,
-                &core.scene,
-                &mut cursor_pos,
-                &mut pointer_capture,
-                &mut focused_id,
-                &event_listeners,
-                debug,
-            );
-        }
-
-        // Put things back
-        core.cursor_pos = cursor_pos;
-        core.pointer_capture = pointer_capture;
-        core.focused_id = focused_id;
     }
 }

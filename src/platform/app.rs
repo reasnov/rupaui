@@ -5,10 +5,16 @@ use crate::support::Style;
 use crate::support::Theme;
 use crate::platform::context::PlatformCore;
 
-#[cfg(feature = "gui")]
-use crate::platform::gui::GuiRunner;
-#[cfg(feature = "tui")]
-use crate::platform::tui::TuiRunner;
+#[cfg(feature = "desktop")]
+use crate::platform::desktop::DesktopRunner;
+#[cfg(feature = "terminal")]
+use crate::platform::terminal::TerminalRunner;
+#[cfg(feature = "web")]
+use crate::platform::web::WebRunner;
+#[cfg(feature = "mobile")]
+use crate::platform::mobile::MobileRunner;
+
+use crate::platform::runner::PlatformRunner;
 
 #[derive(Debug, Clone)]
 pub struct AppMetadata {
@@ -112,7 +118,7 @@ impl App {
         Box::new(body)
     }
 
-    #[cfg(feature = "gui")]
+    #[cfg(feature = "desktop")]
     pub fn run(mut self) {
         self.bootstrap();
         let final_root = self.prepare_root();
@@ -127,12 +133,14 @@ impl App {
         }
         
         let core = Arc::new(RwLock::new(core_data));
-        let runner = GuiRunner::new(core);
-        let _ = runner.run_app();
+        let runner = DesktopRunner::new(core);
+        if let Err(e) = runner.run() {
+            eprintln!("Desktop Error: {}", e);
+        }
     }
 
-    #[cfg(feature = "tui")]
-    pub fn run_tui(mut self) {
+    #[cfg(feature = "terminal")]
+    pub fn run_terminal(mut self) {
         self.bootstrap();
         let final_root = self.prepare_root();
         let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
@@ -146,9 +154,39 @@ impl App {
         }
 
         let core = Arc::new(RwLock::new(core_data));
-        let mut runner = TuiRunner::new(core);
+        let runner = TerminalRunner::new(core);
         if let Err(e) = runner.run() {
-            eprintln!("TUI Error: {}", e);
+            eprintln!("Terminal Error: {}", e);
+        }
+    }
+
+    #[cfg(feature = "web")]
+    pub fn run_web(mut self, canvas_id: impl Into<String>) {
+        self.bootstrap();
+        let final_root = self.prepare_root();
+        let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
+        core_data.event_listeners = std::mem::take(&mut self.initial_listeners);
+        core_data.debug = self.debug;
+        
+        let core = Arc::new(RwLock::new(core_data));
+        let runner = WebRunner::new(core, canvas_id);
+        if let Err(e) = runner.run() {
+            eprintln!("Web Error: {}", e);
+        }
+    }
+
+    #[cfg(feature = "mobile")]
+    pub fn run_mobile(mut self) {
+        self.bootstrap();
+        let final_root = self.prepare_root();
+        let mut core_data = PlatformCore::new(self.metadata.clone(), Some(final_root));
+        core_data.event_listeners = std::mem::take(&mut self.initial_listeners);
+        core_data.debug = self.debug;
+        
+        let core = Arc::new(RwLock::new(core_data));
+        let runner = MobileRunner::new(core);
+        if let Err(e) = runner.run() {
+            eprintln!("Mobile Error: {}", e);
         }
     }
 }

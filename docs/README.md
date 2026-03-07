@@ -9,6 +9,7 @@ Welcome to the **Rupaui Open Blueprint**. This documentation is structured to mi
 - [Philosophy](./philosophy.md) - Design principles and the 5 Artisan Pillars.
 - [Engineering Standards](./engineering-standards.md) - Coding conventions and mandates.
 - [Architecture Overview](./architecture.md) - Conceptual map of the 9-layer stack.
+- [Platform References](./platform-references.md) - **Entry-Points for Desktop, Web, Terminal, and Mobile.**
 
 ---
 
@@ -18,10 +19,12 @@ Welcome to the **Rupaui Open Blueprint**. This documentation is structured to mi
 - [Platform Orchestrator](./01-hal/platform-orchestrator.md) - `mod.rs` (App lifecycle)
 - [Input Events](./01-hal/input-events.md) - `events.rs` (Universal schema)
 - [Input Dispatcher](./01-hal/input-dispatcher.md) - `dispatcher.rs` (Normalization)
-- [GUI Runner](./01-hal/gui-runner.md) - `gui/mod.rs` (Winit shell)
-- [GUI Window](./01-hal/gui-window.md) - `gui/window.rs` (Window wrapper)
-- [TUI Runner](./01-hal/tui-runner.md) - `tui/mod.rs` (Terminal shell)
-- [TUI Terminal](./01-hal/tui-terminal.md) - `tui/terminal.rs` (Crossterm wrapper)
+- [Desktop Runner](./01-hal/desktop-runner.md) - `desktop/runner.rs` (Winit shell)
+- [Desktop Window](./01-hal/desktop-window.md) - `desktop/infra.rs` (Winit wrapper)
+- [Terminal Runner](./01-hal/terminal-runner.md) - `terminal/runner.rs` (Terminal shell)
+- [Terminal Interface](./01-hal/terminal-interface.md) - `terminal/terminal.rs` (Crossterm wrapper)
+- [Web Runner](./01-hal/web-runner.md) - `web/runner.rs` (WASM / Canvas shell)
+- [Mobile Runner](./01-hal/mobile-runner.md) - `mobile/runner.rs` (Android / iOS shell)
 
 ### [02] Rendering Engine
 - [Renderer Interface](./02-rendering/renderer-interface.md) - `mod.rs` (Universal contract)

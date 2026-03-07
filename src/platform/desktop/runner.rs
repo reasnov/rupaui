@@ -1,27 +1,27 @@
 use winit::application::ApplicationHandler;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
-use winit::window::WindowId;
+use winit::window::{WindowId, Window as WinitWindow};
+use std::sync::Arc;
 
 use crate::core::component::Component;
 use crate::renderer::Renderer as _;
 use crate::renderer::gui::renderer::Renderer;
 use crate::support::vector::Vec2;
-use crate::platform::gui::window::Window;
 use crate::platform::dispatcher::InputDispatcher;
-use crate::platform::gui::input::map_key;
-use crate::platform::{PlatformEvent, SharedPlatformCore, events::*, register_redraw_proxy};
+use crate::platform::desktop::input::map_key;
+use crate::platform::{SharedPlatformCore, runner::*, events::*, register_redraw_proxy};
 
-pub struct GuiRunner {
+pub struct DesktopRunner {
     pub core: SharedPlatformCore,
-    pub window: Option<Window>,
+    pub window: Option<Arc<WinitWindow>>,
     pub renderer: Option<Renderer>,
     pub scale_factor: f64,
     pub modifiers: Modifiers,
     pub a11y_adapter: Option<Box<dyn std::any::Any + Send + Sync>>,
 }
 
-impl GuiRunner {
+impl DesktopRunner {
     pub fn new(core: SharedPlatformCore) -> Self {
         Self {
             core,
@@ -33,31 +33,18 @@ impl GuiRunner {
         }
     }
 
-    pub fn run_app(mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let event_loop = EventLoop::<PlatformEvent>::with_user_event().build()
-            .map_err(|e| format!("Failed to build event loop: {}", e))?;
-            
-        let proxy = event_loop.create_proxy();
-        register_redraw_proxy(move || {
-            let _ = proxy.send_event(PlatformEvent::RequestRedraw);
-        });
-
-        event_loop.run_app(&mut self)
-            .map_err(|e| format!("Failed to run app: {}", e).into())
-    }
-
     fn handle_redraw(&mut self) {
         let mut core = match self.core.write() {
             Ok(c) => c,
             Err(_) => return,
         };
         
-        let window = match &self.window {
-            Some(w) => w,
-            None => return,
+        let (win_width, win_height) = if let Some(window) = &self.window {
+            let size = window.inner_size();
+            (size.width, size.height)
+        } else {
+            return;
         };
-        
-        let (win_width, win_height) = window.size();
         
         let renderer = match &mut self.renderer {
             Some(r) => r,
@@ -125,29 +112,45 @@ impl GuiRunner {
     }
 }
 
-impl ApplicationHandler<PlatformEvent> for GuiRunner {
+impl PlatformRunner for DesktopRunner {
+    fn run(mut self) -> Result<(), crate::support::error::RupauiError> {
+        let event_loop = EventLoop::<PlatformEvent>::with_user_event().build()
+            .map_err(|e| crate::support::error::RupauiError::Platform(format!("Failed to build event loop: {}", e)))?;
+            
+        let proxy = event_loop.create_proxy();
+        register_redraw_proxy(move || {
+            let _ = proxy.send_event(PlatformEvent::RequestRedraw);
+        });
+
+        event_loop.run_app(&mut self)
+            .map_err(|e| crate::support::error::RupauiError::Platform(format!("Failed to run app: {}", e)))
+    }
+}
+
+impl ApplicationHandler<PlatformEvent> for DesktopRunner {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_none() {
             let core_lock = match self.core.read() {
                 Ok(c) => c,
                 Err(e) => {
-                    eprintln!("Failed to acquire core lock: {}", e);
+                    log::error!("Failed to acquire core lock: {}", e);
                     event_loop.exit();
                     return;
                 }
             };
 
-            match Window::new(event_loop, &core_lock.metadata.title, 1024, 768) {
+            let title = core_lock.metadata.title.clone();
+            match crate::platform::desktop::infra::DesktopInfra::create_window(event_loop, &title, 1024, 768) {
                 Ok(window) => {
-                    let (width, height) = window.size();
+                    let size = window.inner_size();
                     let scale = window.scale_factor();
-                    let renderer = pollster::block_on(Renderer::new(window.handle(), width, height, scale as f32));
+                    let renderer = pollster::block_on(Renderer::new(window.clone(), size.width, size.height, scale as f32));
                     self.scale_factor = scale;
                     self.window = Some(window);
                     self.renderer = Some(renderer);
                 }
                 Err(e) => {
-                    eprintln!("Failed to create window: {}", e);
+                    log::error!("Failed to create window: {}", e);
                     event_loop.exit();
                 }
             }
@@ -180,9 +183,9 @@ impl ApplicationHandler<PlatformEvent> for GuiRunner {
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 self.scale_factor = scale_factor;
                 if let Some(window) = &self.window {
-                    let (w, h) = window.size();
+                    let size = window.inner_size();
                     if let Some(renderer) = &mut self.renderer {
-                        renderer.resize(w, h, scale_factor as f32);
+                        renderer.resize(size.width, size.height, scale_factor as f32);
                     }
                 }
             }
