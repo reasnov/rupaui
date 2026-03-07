@@ -33,7 +33,8 @@ Standard for all UI Elements in `src/elements/`.
 
 ### The Agnostic Bridge
 - Layers 3 through 9 communicate using a "Universal Language" (`InputEvent`, `trait Renderer`).
-- Implementation details are isolated in Layer 1 (HAL) and Layer 2 (Rendering).
+- Implementation details are isolated in Layer 1 (Platform Integration) and Layer 2 (Rendering).
+
 
 ---
 

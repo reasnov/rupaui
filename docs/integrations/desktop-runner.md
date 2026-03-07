@@ -1,4 +1,4 @@
-# HAL: Desktop Runner (`desktop/runner.rs`) 🖥️
+# Platform Integration: Desktop Runner (`desktop/runner.rs`) 🖥️
 
 The **Desktop Runner** is the primary execution shell for macOS, Windows, and Linux applications. It utilizes **Winit** for OS window management and **WGPU** for high-performance, hardware-accelerated rendering.
 

@@ -52,7 +52,7 @@ App::new("Demo")
 
 ---
 
-## 🏗️ Platform Runners (HAL)
+## 🏗️ Platform Runners (Platform Integration)
 The low-level shells responsible for hardware abstraction and event mapping.
 
 ### `trait PlatformRunner`

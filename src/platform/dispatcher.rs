@@ -68,12 +68,23 @@ impl InputDispatcher {
             listener(&event);
         }
 
+        // --- Focus Trap Detection ---
+        let mut target_root = root;
+        if let Some(body) = root.as_any().downcast_ref::<crate::core::body::Body>() {
+            if let Ok(stack) = body.logic.overlays.read() {
+                // Find the topmost modal overlay
+                if let Some(modal) = stack.iter().rev().find(|o| o.is_modal()) {
+                    target_root = modal.as_ref();
+                }
+            }
+        }
+
         match event {
             InputEvent::PointerMove { position } => {
                 let delta = position - *cursor_pos;
                 *cursor_pos = position;
 
-                // Handle Pointer Capture
+                // Handle Pointer Capture (Capture overrides Focus Trap)
                 if let Some(capture_id) = pointer_capture.as_ref() {
                     if let Some(hit) = scene.find_by_id(root, capture_id) {
                         let local_pos = position - hit.local_pos;
@@ -86,12 +97,10 @@ impl InputDispatcher {
                     }
                 }
 
-                // Normal hit-testing (Top-down order ensures overlays are found first)
-                if let HitDiscovery::Found(hit) = scene.find_target(root, *cursor_pos) {
+                // Normal hit-testing
+                if let HitDiscovery::Found(hit) = scene.find_target(target_root, *cursor_pos) {
                     // Resolve Cursor from topmost hovered component
                     if let Some(target) = hit.path.last() {
-                        // This should ideally be generic, but for now we'll handle common ones
-                        // To be 100% correct, we'd need a style accessor on the Component trait.
                         if let Some(body) = target.as_any().downcast_ref::<crate::core::body::Body>() {
                              *requested_cursor = body.view.core.style.read().unwrap().interactivity.cursor;
                         } else if let Some(div) = target.as_any().downcast_ref::<crate::primitives::div::Div>() {
@@ -107,7 +116,7 @@ impl InputDispatcher {
                 }
             }
             InputEvent::PointerButton { button, state } => {
-                if let HitDiscovery::Found(hit) = scene.find_target(root, *cursor_pos) {
+                if let HitDiscovery::Found(hit) = scene.find_target(target_root, *cursor_pos) {
                     let mut ui_ev = UIEvent::new(hit.local_pos)
                         .with_context(Modifiers::default(), Some(button), Some(state));
                     
@@ -124,7 +133,7 @@ impl InputDispatcher {
                             *pointer_capture = None;
                         }
 
-                        // Handle Focus Requests (Clicked element gets focus by default if it wants it)
+                        // Handle Focus Requests
                         if let Some(true) = ui_ev.focus_request {
                             *focused_id = Some(comp.id().to_string());
                         } else if let Some(false) = ui_ev.focus_request {
@@ -136,7 +145,7 @@ impl InputDispatcher {
                 }
             }
             InputEvent::PointerScroll { delta } => {
-                if let HitDiscovery::Found(hit) = scene.find_target(root, *cursor_pos) {
+                if let HitDiscovery::Found(hit) = scene.find_target(target_root, *cursor_pos) {
                     let mut ui_ev = UIEvent::new(hit.local_pos);
                     for comp in hit.path.iter().rev() {
                         comp.on_scroll(&mut ui_ev, delta.y);
@@ -145,13 +154,12 @@ impl InputDispatcher {
                 }
             }
             InputEvent::Key { key, state, modifiers } => {
-                // Priority 1: Component with Focus
+                // Priority 1: Component with Focus (must be within target_root if trap is active)
                 if let Some(focus_id) = focused_id.as_ref() {
-                    if let Some(hit) = scene.find_by_id(root, focus_id) {
-                        let mut ui_ev = UIEvent::new(Vec2::zero()) // Focus input doesn't necessarily have local_pos
+                    if let Some(hit) = scene.find_by_id(target_root, focus_id) {
+                        let mut ui_ev = UIEvent::new(Vec2::zero())
                             .with_context(modifiers, None, Some(state));
                         
-                        // Keyboard events bubble from focused child to parent
                         for comp in hit.path.iter().rev() {
                             comp.on_key(&mut ui_ev, key);
                             if ui_ev.consumed { break; }
@@ -160,8 +168,8 @@ impl InputDispatcher {
                     }
                 }
 
-                // Priority 2: Fallback to Hovered Component if no focus
-                if let HitDiscovery::Found(hit) = scene.find_target(root, *cursor_pos) {
+                // Priority 2: Hovered Component within target_root
+                if let HitDiscovery::Found(hit) = scene.find_target(target_root, *cursor_pos) {
                     let mut ui_ev = UIEvent::new(hit.local_pos)
                         .with_context(modifiers, None, Some(state));
                     
@@ -172,9 +180,8 @@ impl InputDispatcher {
                 }
             }
             InputEvent::Ime(text) => {
-                // IME (Text Input) goes to the focused component
                 if let Some(focus_id) = focused_id.as_ref() {
-                    if let Some(hit) = scene.find_by_id(root, focus_id) {
+                    if let Some(hit) = scene.find_by_id(target_root, focus_id) {
                         let mut ui_ev = UIEvent::new(Vec2::zero());
                         for comp in hit.path.iter().rev() {
                             comp.on_text(&mut ui_ev, &text);
@@ -185,8 +192,6 @@ impl InputDispatcher {
             }
             InputEvent::Resize { size, .. } => {
                 viewport.set(size);
-                // Resize events are broadcasted to the whole tree
-                // This is a simple recursive broadcast
                 fn broadcast_resize(comp: &dyn Component, size: Vec2) {
                     let mut ui_ev = UIEvent::new(Vec2::zero());
                     comp.on_resize(&mut ui_ev, size);
@@ -206,9 +211,7 @@ impl InputDispatcher {
                 }
                 broadcast_safe_area(root, top, right, bottom, left);
             }
-            InputEvent::Quit => {
-                // Handle application teardown logic if needed.
-            }
+            InputEvent::Quit => {}
             _ => {}
         }
     }

@@ -28,5 +28,5 @@ Provides a unified trait implemented by both `Signal` and `Memo`. This ensures t
 ---
 
 ## 🔄 Interaction Flow
-- **L4 (Signal) -> L1 (HAL):** Signals the platform shell to schedule a redraw.
+- **L4 (Signal) -> L1 (Platform Integration):** Signals the platform shell to schedule a redraw.
 - **L4 (Signal) -> L5 (Component):** Marks component views as `dirty` via connection callbacks.

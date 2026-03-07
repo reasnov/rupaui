@@ -16,7 +16,7 @@ To maintain a scalable and sustainable codebase, Rupaui strictly maps its **9-La
 | **L4: Reactivity** | `src/utils/state.rs` | Signal, Memo, and the Reactive Graph. |
 | **L3: Layout** | `src/layout/` | Taffy integration and geometric calculations. |
 | **L2: Rendering** | `src/renderer/` | WGPU pipelines, batching, and text rendering. |
-| **L1: HAL** | `src/platform/` | Windowing (Winit) and native OS event dispatching. |
+| **L1: Platform Integration** | `src/platform/` | Windowing (Winit) and native OS event dispatching. |
 
 ---
 

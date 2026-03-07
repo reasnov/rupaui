@@ -1,4 +1,4 @@
-# HAL: Mobile Runner (`mobile/runner.rs`) 📱
+# Platform Integration: Mobile Runner (`mobile/runner.rs`) 📱
 
 The **Mobile Runner** provides the execution shell for native mobile applications on Android and iOS. It manages the unique lifecycle constraints of mobile operating systems, such as background suspension and resource reclamation.
 
@@ -35,4 +35,4 @@ App::new("My Mobile App")
 
 ## 🛡️ Dependency Inversion (MobileInfra)
 
-All native glue logic (JNI for Android, CoreGraphics for iOS) is abstracted behind `MobileInfra` (`src/platform/mobile/infra.rs`). This prevents native mobile platform types from leaking into the agnostik HAL runner logic.
+All native glue logic (JNI for Android, CoreGraphics for iOS) is abstracted behind `MobileInfra` (`src/platform/mobile/infra.rs`). This prevents native mobile platform types from leaking into the agnostik Platform Integration runner logic.

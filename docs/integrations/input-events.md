@@ -10,7 +10,7 @@ This module defines the "Universal Language" of input. It acts as the semantic f
 Input events are represented by the `InputEvent` enum. It uses `f32` coordinates (logical units) and standardized `KeyCode` variants to eliminate differences between OS keyboard layouts and mouse drivers.
 
 ### 2. Physical to Logical Mapping
-The HAL runners (GUI/TUI) are responsible for the conversion:
+The Platform Integration runners (GUI/TUI) are responsible for the conversion:
 - **GUI:** `Physical Pos / Scale Factor = Logical Pos`.
 - **TUI:** `Terminal Column/Row = Logical Integer Grid`.
 

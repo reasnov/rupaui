@@ -12,6 +12,9 @@ pub trait Component: Send + Sync {
     /// Allows downcasting trait objects to concrete types.
     fn as_any(&self) -> &dyn std::any::Any;
 
+    /// If true, this component acts as a focus trap and blocks input to layers below.
+    fn is_modal(&self) -> bool { false }
+
     // Layout Infrastructure
     fn get_node(&self) -> Option<SceneNode>;
     fn set_node(&self, node: SceneNode);

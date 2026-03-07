@@ -82,4 +82,20 @@ impl WebInfra {
         );
         meta.set_attribute("content", &hex).map_err(|_| "Failed to set content".into())
     }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn push_state(path: &str) -> Result<(), String> {
+        let window = web_sys::window().ok_or("No global window found")?;
+        let history = window.history().map_err(|_| "Failed to get history")?;
+        history
+            .push_state_with_url(&JsValue::NULL, "", Some(path))
+            .map_err(|_| "Failed to push state".into())
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn get_current_path() -> String {
+        web_sys::window()
+            .and_then(|w| w.location().pathname().ok())
+            .unwrap_or_else(|| "/".to_string())
+    }
 }

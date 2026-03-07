@@ -6,7 +6,7 @@ Rupaui is designed to be highly modular. By changing a single configuration, you
 
 ## 📦 Compilation-Time Selection (Cargo Features)
 
-The most efficient way to select a backend is via Cargo features. This ensures that the unused HAL code (e.g., WGPU for TUI) is not compiled into your final binary.
+The most efficient way to select a backend is via Cargo features. This ensures that the unused Platform Integration code (e.g., WGPU for TUI) is not compiled into your final binary.
 
 ```toml
 # In your Cargo.toml
@@ -29,9 +29,9 @@ fn main() {
     let app = App::new("My Artisan App");
 
     if std::env::args().any(|arg| arg == "--tui") {
-        app.run_tui(); // Forces the TUI HAL & Renderer
+        app.run_tui(); // Forces the TUI Platform Integration & Renderer
     } else {
-        app.run(); // Defaults to GUI HAL (WGPU/Winit)
+        app.run(); // Defaults to GUI Platform Integration (WGPU/Winit)
     }
 }
 ```

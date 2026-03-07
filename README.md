@@ -57,15 +57,15 @@ fn main() {
 
 Rupaui is designed with total transparency. Explore our architecture from hardware to ecosystem:
 
-1.  [**HAL Layer**](./docs/01-hal/platform-orchestrator.md) - Target-specific Runners (Desktop, Terminal, Web, Mobile).
-2.  [**Rendering Engine**](./docs/02-rendering/renderer-interface.md) - WGPU and TUI painters.
-3.  [**Geometric Scene**](./docs/03-layout/scene-core.md) - Tree resolution and Taffy integration.
-4.  [**Reactivity**](./docs/04-reactivity/signals.md) - Signals and Change Propagation.
-5.  [**Architecture**](./docs/05-architecture/logic-and-view.md) - Component design standards.
-6.  [**Primitives**](./docs/06-primitives/primitive-design.md) - Atomic building blocks.
-7.  [**Components**](./docs/07-components/component-design.md) - The Artisan Library.
-8.  [**Composition**](./docs/08-composition/app-bootstrap.md) - Application assembly.
-9.  [**Ecosystem**](./docs/09-ecosystem/styling-api.md) - DNA Visual & Design System.
+1.  [**Platform Integration Layer**](./docs/integrations/platform-orchestrator.md) - Target-specific Runners (Desktop, Terminal, Web, Mobile).
+2.  [**Rendering Engine**](./docs/renderings/renderer-interface.md) - WGPU and TUI painters.
+3.  [**Geometric Scene**](./docs/layouts/scene-core.md) - Tree resolution and Taffy integration.
+4.  [**Reactivity**](./docs/reactivity/signals.md) - Signals and Change Propagation.
+5.  [**Architecture**](./docs/architectures/logic-and-view.md) - Component design standards.
+6.  [**Primitives**](./docs/primitives/primitive-design.md) - Atomic building blocks.
+7.  [**Components**](./docs/components/component-design.md) - The Artisan Library.
+8.  [**Composition**](./docs/compositions/app-bootstrap.md) - Application assembly.
+9.  [**Ecosystem**](./docs/ecosystems/styling-api.md) - DNA Visual & Design System.
 
 ---
 

@@ -11,6 +11,7 @@ pub mod svg;
 pub mod text;
 pub mod theme_switcher;
 pub mod viewport;
+pub mod routing;
 
 pub use brand::Brand;
 pub use button::{Button, CloseButton, ButtonGroup};
@@ -25,3 +26,4 @@ pub use svg::{Svg, Icon, SvgCanvas};
 pub use text::Text;
 pub use theme_switcher::ThemeSwitcher;
 pub use viewport::Viewport;
+pub use routing::{Router, RouterState};

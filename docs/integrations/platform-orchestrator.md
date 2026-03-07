@@ -1,4 +1,4 @@
-# HAL: Platform Orchestrator 🏛️
+# Platform Integration: Platform Orchestrator 🏛️
 
 The Platform Orchestrator (Layer 1) is the foundation of every Rupaui application. It manages the hardware-specific execution environment and provides a unified "agnostic bridge" for the higher layers of the framework.
 
@@ -35,7 +35,7 @@ The lifecycle of a Rupaui application is standardized across all targets:
 
 ---
 
-## 🛡️ Dependency Inversion (HAL-DI)
+## 🛡️ Dependency Inversion (Platform Integration-DI)
 
 To ensure long-term sustainability, Layer 1 strictly follows Dependency Inversion. Every third-party library is isolated behind an "Infra" wrapper:
 - **`DesktopInfra`**: Isolates Winit windowing.

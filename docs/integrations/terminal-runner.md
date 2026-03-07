@@ -1,4 +1,4 @@
-# HAL: Terminal Runner (`terminal/runner.rs`) ⌨️
+# Platform Integration: Terminal Runner (`terminal/runner.rs`) ⌨️
 
 The **Terminal Runner** provides the execution shell for command-line applications (TUI). It manages the terminal's raw mode, alternative screen buffer, and keyboard/mouse input capture via **Crossterm**.
 

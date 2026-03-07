@@ -1,4 +1,4 @@
-# HAL: Web Runner (`web/runner.rs`) 🌐
+# Platform Integration: Web Runner (`web/runner.rs`) 🌐
 
 The **Web Runner** is the execution shell for browser-based applications using WebAssembly (WASM). It leverages the **Canvas API** for rendering and integrates with the browser's event loop via `requestAnimationFrame`.
 

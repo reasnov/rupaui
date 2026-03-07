@@ -49,12 +49,12 @@ Rupaui is built on a 9-layer stack, descending from the user-facing composition 
 *   **Universal Interface (`trait Renderer`):** Agnostic contract for drawing primitives, text, and managing clipping.
 *   **Sub-systems:** GUI Renderer (WGPU), TUI Renderer (Terminal), and Headless testing buffer.
 
-### Layer 1: Hardware Abstraction Layer (HAL)
+### Layer 1: Hardware Abstraction Layer (Platform Integration)
 *   **Purpose:** Native interface with the environment (OS or Terminal).
 *   **Composition Core (`PlatformCore`):** Shared state for all platforms (App root, Scene reference, Cursor).
 *   **Standardized Lifecycle (`trait PlatformRunner`):** Unified initialization and execution loop.
-*   **GUI HAL:** WGPU Device & Winit Windowing.
-*   **TUI HAL:** Terminal Raw Mode & Input Capture.
+*   **GUI Platform Integration:** WGPU Device & Winit Windowing.
+*   **TUI Platform Integration:** Terminal Raw Mode & Input Capture.
 
 ---
 

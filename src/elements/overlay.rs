@@ -23,6 +23,7 @@ impl<'a> Component for Modal<'a> {
     fn id(&self) -> &str { &self.id }
     fn children(&self) -> Vec<&dyn Component> { self.logic.children.get_all() }
     fn as_any(&self) -> &dyn std::any::Any { self }
+    fn is_modal(&self) -> bool { true }
     fn get_node(&self) -> Option<SceneNode> { self.view.core.get_node() }
     fn set_node(&self, node: SceneNode) { self.view.core.set_node(node); }
     fn is_dirty(&self) -> bool { self.view.core.is_dirty() }

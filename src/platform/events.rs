@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::platform::dispatcher::UIEvent;
 
 /// Standardized input events that are platform-agnostic.
-/// Layer 1 (HAL) is responsible for converting native events into these types.
+/// Layer 1 (Platform Integration) is responsible for converting native events into these types.
 #[derive(Debug, Clone, PartialEq)]
 pub enum InputEvent {
     // Pointer Events (Mouse, Touch, Pen)

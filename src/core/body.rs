@@ -20,6 +20,8 @@ pub struct BodyLogic<'a> {
     pub safe_area: Signal<(f32, f32, f32, f32)>,
     /// Reactive storage for viewport size
     pub viewport: Signal<Vec2>,
+    /// Reactive storage for backdrop color (dimmer)
+    pub backdrop_color: Signal<[f32; 4]>,
 }
 
 impl<'a> BodyLogic<'a> {
@@ -29,6 +31,7 @@ impl<'a> BodyLogic<'a> {
             overlays: Arc::new(RwLock::new(Vec::new())),
             safe_area: Signal::new((0.0, 0.0, 0.0, 0.0)),
             viewport: Signal::new(Vec2::zero()),
+            backdrop_color: Signal::new([0.0, 0.0, 0.0, 0.5]), // Default semi-transparent black
         }
     }
 
@@ -165,15 +168,28 @@ impl<'a> Component for Body<'a> {
             renderer.draw_rect(global_pos.x, global_pos.y, layout.size.width, layout.size.height, color.to_rgba(), style_ref.rounding.nw);
         }
 
-        // Urutan Paint Penting untuk Z-Index
-        
         // 1. Paint Primary Content
         if let Some(ref child) = self.logic.child {
             child.paint(renderer, taffy, node, is_group_hovered || style_ref.is_group, global_pos);
         }
 
-        // 2. Paint Overlays (Layered on top)
+        // 2. Backdrop & Overlays
         if let Ok(stack) = self.logic.overlays.read() {
+            let has_modal = stack.iter().any(|o| o.is_modal());
+            
+            if has_modal {
+                // Draw global backdrop
+                let color = self.logic.backdrop_color.get();
+                renderer.draw_rect(
+                    global_pos.x, 
+                    global_pos.y, 
+                    layout.size.width, 
+                    layout.size.height, 
+                    color, 
+                    0.0
+                );
+            }
+
             for overlay in stack.iter() {
                 overlay.paint(renderer, taffy, node, is_group_hovered || style_ref.is_group, global_pos);
             }

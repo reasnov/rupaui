@@ -100,6 +100,19 @@ impl PlatformRunner for WebRunner {
             use wasm_bindgen::prelude::*;
             use wasm_bindgen_futures::spawn_local;
 
+            // Sync initial path from URL
+            let initial_path = WebInfra::get_current_path();
+            crate::elements::routing::RouterState::push(initial_path);
+
+            // Setup popstate listener
+            let window = web_sys::window().unwrap();
+            let closure = Closure::wrap(Box::new(move |_| {
+                let path = WebInfra::get_current_path();
+                crate::elements::routing::RouterState::push(path);
+            }) as Box<dyn FnMut(web_sys::Event)>);
+            window.add_event_listener_with_callback("popstate", closure.as_ref().unchecked_ref()).unwrap();
+            closure.forget(); // Leak closure to keep it alive for the session
+
             let event_loop = EventLoop::<PlatformEvent>::with_user_event().build()
                 .map_err(|e| Error::Platform(e.to_string()))?;
 
