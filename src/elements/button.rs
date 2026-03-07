@@ -1,4 +1,4 @@
-use crate::support::{Style, generate_id, Accessibility, Signal, Variant, EventListeners, Theme, Scale, Vec2, Spacing, Readable};
+use crate::support::{Style, generate_id, Accessibility, Signal, Variant, EventListeners, Theme, Scale, Vec2, Spacing, Readable, Color};
 use crate::style::utilities::typography::TextAlign;
 use crate::core::component::Component;
 use crate::core::ViewCore;
@@ -100,7 +100,7 @@ impl ButtonView {
         }
 
         let text_color = if logic.disabled.get() { [0.5, 0.5, 0.5, 1.0] } else { [1.0, 1.0, 1.0, 1.0] };
-        renderer.draw_text(&logic.label, global_pos.x + 8.0, global_pos.y + 4.0, 14.0, text_color, TextAlign::Left);
+        renderer.draw_text(&logic.label, global_pos.x + 8.0, global_pos.y + 4.0, layout.size.width - 16.0, 14.0, text_color, TextAlign::Left);
     }
 }
 
@@ -162,5 +162,70 @@ impl Component for Button {
         if !self.logic.disabled.get() {
             if let Some(ref cb) = self.logic.events.on_click { (cb)(event); }
         }
+    }
+}
+
+// --- CLOSE BUTTON ---
+
+pub struct CloseButton { pub id: String, pub view: ButtonView }
+impl CloseButton {
+    pub fn new() -> Self {
+        let view = ButtonView::new();
+        view.core.get_style_mut().background.color = Some(Color::Rgba(1.0, 0.0, 0.0, 1.0));
+        Self { id: generate_id(), view }
+    }
+}
+impl Stylable for CloseButton { fn get_style_mut(&self) -> RwLockWriteGuard<'_, Style> { self.view.core.get_style_mut() } }
+impl Component for CloseButton {
+    fn id(&self) -> &str { &self.id }
+    fn children(&self) -> Vec<&dyn Component> { vec![] }
+    fn get_node(&self) -> Option<SceneNode> { self.view.core.get_node() }
+    fn set_node(&self, node: SceneNode) { self.view.core.set_node(node); }
+    fn is_dirty(&self) -> bool { self.view.core.is_dirty() }
+    fn mark_dirty(&self) { self.view.core.mark_dirty(); }
+    fn clear_dirty(&self) { self.view.core.clear_dirty(); }
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
+        self.view.compute_layout(taffy, measurer, parent, &ButtonLogic::new("×"))
+    }
+    fn paint(&self, renderer: &mut dyn Renderer, taffy: &TaffyTree<()>, node: NodeId, _is_group_hovered: bool, global_pos: Vec2) {
+        self.view.render(renderer, taffy, node, &ButtonLogic::new("×"), global_pos);
+    }
+}
+
+// --- BUTTON GROUP ---
+
+pub struct ButtonGroup<'a> { pub id: String, pub logic: crate::elements::layout::container::ContainerLogic<'a>, pub view: crate::elements::layout::container::ContainerView }
+impl<'a> ButtonGroup<'a> {
+    pub fn new() -> Self {
+        let mut style = Style::default();
+        style.layout.display = crate::support::Display::Flex;
+        style.flex.flex_direction = crate::support::FlexDirection::Row;
+        Self { id: generate_id(), logic: crate::elements::layout::container::ContainerLogic { children: crate::elements::layout::container::Children::new() }, view: crate::elements::layout::container::ContainerView { core: ViewCore::new(style) } }
+    }
+    pub fn child(mut self, child: Button) -> Self { self.logic.children.add(Box::new(child)); self.view.core.mark_dirty(); self }
+}
+impl<'a> Stylable for ButtonGroup<'a> { fn get_style_mut(&self) -> RwLockWriteGuard<'_, Style> { self.view.core.get_style_mut() } }
+impl<'a> Component for ButtonGroup<'a> {
+    fn id(&self) -> &str { &self.id }
+    fn children(&self) -> Vec<&dyn Component> { self.logic.children.get_all() }
+    fn get_node(&self) -> Option<SceneNode> { self.view.core.get_node() }
+    fn set_node(&self, node: SceneNode) { self.view.core.set_node(node); }
+    fn is_dirty(&self) -> bool { self.view.core.is_dirty() }
+    fn mark_dirty(&self) { self.view.core.mark_dirty(); }
+    fn clear_dirty(&self) { self.view.core.clear_dirty(); }
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, _parent: Option<NodeId>) -> NodeId {
+        let node = if let Some(existing) = self.view.core.get_node() {
+            if self.view.core.is_dirty() { taffy.set_style(existing.raw(), self.view.core.get_style_mut().to_taffy()).unwrap(); }
+            existing.raw()
+        } else {
+            let new_node = taffy.new_with_children(self.view.core.get_style_mut().to_taffy(), &[]).unwrap(); self.view.core.set_node(SceneNode::from(new_node)); new_node
+        };
+        let child_nodes = self.logic.children.layout_all(taffy, measurer);
+        taffy.set_children(node, &child_nodes).unwrap();
+        self.view.core.clear_dirty(); node
+    }
+    fn paint(&self, renderer: &mut dyn Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool, global_pos: Vec2) {
+        let style_ref = self.view.core.style.read().unwrap();
+        self.logic.children.paint_all(renderer, taffy, node, is_group_hovered || style_ref.is_group, global_pos, 0);
     }
 }

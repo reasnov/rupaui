@@ -3,7 +3,6 @@ use crate::core::component::Component;
 use crate::core::ViewCore;
 use crate::renderer::{Renderer, TextMeasurer};
 use crate::style::modifiers::base::Stylable;
-use crate::platform::dispatcher::UIEvent;
 use crate::scene::SceneNode;
 use taffy::prelude::*;
 use std::sync::RwLockWriteGuard;
@@ -49,6 +48,7 @@ impl Component for Icon {
 pub struct SvgLogic { pub source: String }
 pub struct SvgView { pub core: ViewCore }
 pub struct Svg { pub id: String, pub logic: SvgLogic, pub view: SvgView }
+pub type SvgCanvas = Svg;
 
 impl Svg {
     pub fn new(source: impl Into<String>) -> Self {

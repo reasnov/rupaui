@@ -50,10 +50,10 @@ impl TextView {
         node
     }
 
-    pub fn render(&self, renderer: &mut dyn Renderer, _taffy: &TaffyTree<()>, _node: NodeId, logic: &TextLogic, global_pos: Vec2) {
+    pub fn render(&self, renderer: &mut dyn Renderer, _taffy: &TaffyTree<()>, _node: NodeId, logic: &TextLogic, global_pos: Vec2, width: f32) {
         let style = self.core.style.read().unwrap();
         let color = style.typography.color.clone().unwrap_or(Color::Semantic("text".into(), None)).to_rgba();
-        renderer.draw_text(&logic.content, global_pos.x, global_pos.y, 16.0, color, TextAlign::Left);
+        renderer.draw_text(&logic.content, global_pos.x, global_pos.y, width, 16.0, color, TextAlign::Left);
     }
 }
 
@@ -94,6 +94,7 @@ impl Component for Text {
     }
     
     fn paint(&self, renderer: &mut dyn Renderer, taffy: &TaffyTree<()>, node: NodeId, _is_group_hovered: bool, global_pos: Vec2) {
-        self.view.render(renderer, taffy, node, &self.logic, global_pos);
+        let layout = taffy.layout(node).unwrap();
+        self.view.render(renderer, taffy, node, &self.logic, global_pos, layout.size.width);
     }
 }

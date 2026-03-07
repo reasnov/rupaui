@@ -3,7 +3,6 @@ use crate::core::component::Component;
 use crate::core::ViewCore;
 use crate::renderer::{Renderer, TextMeasurer};
 use crate::style::modifiers::base::Stylable;
-use crate::platform::dispatcher::UIEvent;
 use crate::scene::SceneNode;
 use crate::elements::layout::container::Children;
 use taffy::prelude::*;
@@ -58,7 +57,7 @@ impl<'a> Component for Overlay<'a> {
     fn mark_dirty(&self) { self.view.core.mark_dirty(); }
     fn clear_dirty(&self) { self.view.core.clear_dirty(); }
 
-    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, _parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.view.core.get_node() {
             if self.view.core.is_dirty() { 
                 taffy.set_style(existing.raw(), self.view.core.get_style_mut().to_taffy()).unwrap(); 
@@ -70,12 +69,8 @@ impl<'a> Component for Overlay<'a> {
             new_node
         };
 
-        if let Some(p) = parent {
-            let current_children = taffy.children(p).unwrap_or_default();
-            if !current_children.contains(&node) { taffy.add_child(p, node).unwrap(); }
-        }
-
-        self.logic.children.layout_all(taffy, measurer, node);
+        let child_nodes = self.logic.children.layout_all(taffy, measurer);
+        taffy.set_children(node, &child_nodes).unwrap();
         self.view.core.clear_dirty();
         node
     }

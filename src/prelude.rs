@@ -62,6 +62,15 @@ pub use crate::style::modifiers::visual::ChainedVisual;
 pub use crate::style::modifiers::spacing::ChainedSpacing;
 pub use crate::style::modifiers::layout::ChainedLayout;
 pub use crate::style::modifiers::sizing::ChainedSizing;
+pub use crate::style::modifiers::responsive::{
+    Breakpoint, ChainedResponsive, 
+    xs, sm, md, lg, xl, xl2, xl3, xl4, xl5, xl6
+};
+pub use crate::style::modifiers::state::{
+    ChainedState, hover, active, focus, group_hover, is_group
+};
+pub use crate::style::modifiers::animation::{ChainedMotion, motion, Easing};
+pub use std::time::Duration;
 pub use crate::style::modifiers::theme::{Theme, Variant};
 pub use crate::style::modifiers::{
     p, px, py, m, mx, my, 

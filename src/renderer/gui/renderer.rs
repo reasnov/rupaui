@@ -151,14 +151,16 @@ impl BaseRenderer for Renderer {
         ]);
     }
 
-    fn draw_text(&mut self, content: &str, x: f32, y: f32, size: f32, color: [f32; 4], _align: TextAlign) {
+    fn draw_text(&mut self, content: &str, x: f32, y: f32, width: f32, size: f32, color: [f32; 4], _align: TextAlign) {
         let scale = self.core.scale_factor;
         let tx = (x + self.core.camera_offset.x) * self.core.camera_zoom * scale; 
         let ty = (y + self.core.camera_offset.y) * self.core.camera_zoom * scale;
         let tsize = size * self.core.camera_zoom * scale;
+        let twidth = width * self.core.camera_zoom * scale;
 
         let mut buffer = glyphon::Buffer::new(&mut self.text_renderer.font_system, glyphon::Metrics::new(tsize, tsize));
-        buffer.set_size(&mut self.text_renderer.font_system, Some(self.core.logical_size.x), Some(self.core.logical_size.y));
+        // Set available width for wrapping. Use logical window size as height limit for now.
+        buffer.set_size(&mut self.text_renderer.font_system, Some(twidth), Some(self.core.logical_size.y * scale));
         buffer.set_text(&mut self.text_renderer.font_system, content, &glyphon::Attrs::new().family(glyphon::Family::SansSerif), glyphon::Shaping::Advanced, None);
         buffer.shape_until_scroll(&mut self.text_renderer.font_system, false);
 
@@ -178,11 +180,16 @@ impl BaseRenderer for Renderer {
                 label: Some("Rupaui Main Pass"),
                 color_attachments: &[Some(RenderPassColorAttachment {
                     view: &view, resolve_target: None, depth_slice: None,
-                    ops: Operations { load: LoadOp::Clear(wgpu::Color::BLACK), store: StoreOp::Store },
+                    ops: Operations {
+                        load: LoadOp::Clear(wgpu::Color::BLACK),
+                        store: StoreOp::Store,
+                    },
                 })],
-                depth_stencil_attachment: None, timestamp_writes: None, occlusion_query_set: None, multiview_mask: None,
+                depth_stencil_attachment: None,
+                timestamp_writes: None, 
+                occlusion_query_set: None,
+                multiview_mask: None,
             });
-
             pass.set_pipeline(&self.render_pipeline); 
             pass.set_bind_group(0, &self.default_texture.bind_group, &[]); 
             self.batcher.flush(&self.queue, &mut pass);

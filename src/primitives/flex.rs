@@ -4,7 +4,6 @@ use crate::core::ViewCore;
 use crate::elements::layout::container::Children;
 use crate::renderer::{Renderer, TextMeasurer};
 use crate::style::modifiers::base::Stylable;
-use crate::platform::dispatcher::UIEvent;
 use crate::scene::SceneNode;
 use taffy::prelude::*;
 use std::sync::RwLockWriteGuard;
@@ -35,15 +34,16 @@ impl<'a> Component for Flex<'a> {
     fn is_dirty(&self) -> bool { self.view.core.is_dirty() }
     fn mark_dirty(&self) { self.view.core.mark_dirty(); }
     fn clear_dirty(&self) { self.view.core.clear_dirty(); }
-    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, parent: Option<NodeId>) -> NodeId {
+    fn layout(&self, taffy: &mut TaffyTree<()>, measurer: &dyn TextMeasurer, _parent: Option<NodeId>) -> NodeId {
         let node = if let Some(existing) = self.view.core.get_node() {
             if self.view.core.is_dirty() { taffy.set_style(existing.raw(), self.view.core.get_style_mut().to_taffy()).unwrap(); }
             existing.raw()
         } else {
             let new_node = taffy.new_with_children(self.view.core.get_style_mut().to_taffy(), &[]).unwrap(); self.view.core.set_node(SceneNode::from(new_node)); new_node
         };
-        if let Some(p) = parent { let cur = taffy.children(p).unwrap_or_default(); if !cur.contains(&node) { taffy.add_child(p, node).unwrap(); } }
-        self.logic.children.layout_all(taffy, measurer, node); self.view.core.clear_dirty(); node
+        let child_nodes = self.logic.children.layout_all(taffy, measurer);
+        taffy.set_children(node, &child_nodes).unwrap();
+        self.view.core.clear_dirty(); node
     }
     fn paint(&self, renderer: &mut dyn Renderer, taffy: &TaffyTree<()>, node: NodeId, is_group_hovered: bool, global_pos: Vec2) {
         let layout = taffy.layout(node).unwrap(); 

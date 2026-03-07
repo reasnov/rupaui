@@ -3,7 +3,6 @@ use crate::core::component::Component;
 use crate::core::ViewCore;
 use crate::renderer::{Renderer, TextMeasurer};
 use crate::style::modifiers::base::Stylable;
-use crate::platform::dispatcher::UIEvent;
 use crate::scene::SceneNode;
 use taffy::prelude::*;
 use std::sync::RwLockWriteGuard;

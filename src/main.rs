@@ -1,19 +1,31 @@
 use rupaui::prelude::*;
 
 fn main() {
-    // Initialize standard logging for WGPU and Platform feedback
+    // Initialize standard logging
     env_logger::init();
     
-    // Bootstrap the Rupaui application with a storytelling Hero Screen
-    App::new("Rupaui | The Soul of UI")
+    // Bootstrap the Rupaui application with zero-boilerplate metadata
+    App::new("Rupaui")
+        .title("Rupaui | The Artisan's Playground")
+        .version("1.0.0-alpha")
+        .description("A semantic UI framework for the Rust ecosystem.")
+        .author("Reasnov")
+        .identifier("com.reasnov.rupaui")
+        // Set the global body style (similar to CSS on <body>)
+        .style(bg(Color::Semantic("background".into(), None)))
         .root(
             VStack::new()
-                .bg(Color::Semantic("background".to_string(), None))
+                .w_full()
+                .h_full()
+                .items_center()
+                .justify_center()
                 .p(60.0)
                 .gap(48.0)
                 // --- Header with Theme Switcher ---
                 .child(Box::new(
                     HStack::new()
+                        .w(600.0)
+                        .items_center()
                         .child(Box::new(
                             VStack::new()
                                 .gap(12.0)
@@ -22,7 +34,7 @@ fn main() {
                                         .style(text_color(Color::Semantic("primary".into(), None)))
                                 ))
                                 .child(Box::new(
-                                    Text::new("The Soul of Semantic Interfaces")
+                                    Text::new("The Artisan's Playground")
                                         .style(text_color(Color::Semantic("text".into(), None)))
                                 ))
                         ))
@@ -33,6 +45,7 @@ fn main() {
                 // --- Deep Storytelling Philosophy ---
                 .child(Box::new(
                     Section::new("Our Manifesto")
+                        .style(w(600.0))
                         .child(Box::new(
                             VStack::new()
                                 .gap(24.0)
@@ -53,6 +66,7 @@ fn main() {
                 // --- Gratitude & Community ---
                 .child(Box::new(
                     VStack::new()
+                        .style(w(600.0))
                         .gap(16.0)
                         .child(Box::new(
                             Text::new("To the Builders")
@@ -66,6 +80,7 @@ fn main() {
                 // --- Framework Credits ---
                 .child(Box::new(
                     HStack::new()
+                        .style(w(600.0))
                         .p(24.0)
                         .bg(Color::Semantic("surface".to_string(), None))
                         .style(rounded(16.0))

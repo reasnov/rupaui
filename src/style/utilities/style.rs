@@ -32,6 +32,7 @@ pub struct Style {
     pub motion: Option<Motion>,
     pub is_group: bool,
     pub group_hover: Option<Box<Style>>,
+    pub responsive: HashMap<crate::style::modifiers::responsive::Breakpoint, Box<Style>>,
     pub variants: HashMap<String, Style>,
 }
 
@@ -40,6 +41,26 @@ fn length(v: f32) -> LengthPercentage {
 }
 
 impl Style {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn p(mut self, val: f32) -> Self { self.padding = Spacing::all(val); self }
+    pub fn px(mut self, val: f32) -> Self { self.padding.left = val; self.padding.right = val; self }
+    pub fn py(mut self, val: f32) -> Self { self.padding.top = val; self.padding.bottom = val; self }
+    
+    pub fn m(mut self, val: f32) -> Self { self.margin = Spacing::all(val); self }
+    pub fn mx(mut self, val: f32) -> Self { self.margin.left = val; self.margin.right = val; self }
+    pub fn my(mut self, val: f32) -> Self { self.margin.top = val; self.margin.bottom = val; self }
+
+    pub fn w(mut self, val: f32) -> Self { self.sizing.width = Some(val); self }
+    pub fn h(mut self, val: f32) -> Self { self.sizing.height = Some(val); self }
+    pub fn w_full(mut self) -> Self { self.sizing.width = Some(100.0); self }
+    pub fn h_full(mut self) -> Self { self.sizing.height = Some(100.0); self }
+
+    pub fn bg(mut self, color: Color) -> Self { self.background.color = Some(color); self }
+    pub fn rounded(mut self, val: f32) -> Self { self.rounding = Rounding::all(val); self }
+
     pub fn to_taffy(&self) -> taffy::style::Style {
         let mut s = taffy::style::Style::default();
         
@@ -103,7 +124,4 @@ impl Style {
 
         s
     }
-
-    pub fn bg(mut self, color: Color) -> Self { self.background.color = Some(color); self }
-    pub fn rounded(mut self, val: f32) -> Self { self.rounding = Rounding::all(val); self }
 }

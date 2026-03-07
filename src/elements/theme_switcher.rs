@@ -74,6 +74,7 @@ impl ThemeSwitcherView {
             label, 
             global_pos.x + 12.0, 
             global_pos.y + 8.0, 
+            layout.size.width - 24.0,
             12.0, 
             text_color, 
             TextAlign::Left

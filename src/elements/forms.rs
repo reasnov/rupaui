@@ -4,7 +4,6 @@ use crate::core::component::Component;
 use crate::core::ViewCore;
 use crate::renderer::{Renderer, TextMeasurer};
 use crate::style::modifiers::base::Stylable;
-use crate::platform::dispatcher::UIEvent;
 use crate::scene::SceneNode;
 use taffy::prelude::*;
 use std::sync::RwLockWriteGuard;
@@ -38,9 +37,10 @@ impl Component for Label {
         if let Some(p) = parent { let cur = taffy.children(p).unwrap_or_default(); if !cur.contains(&node) { taffy.add_child(p, node).unwrap(); } }
         self.view.core.clear_dirty(); node
     }
-    fn paint(&self, renderer: &mut dyn Renderer, _taffy: &TaffyTree<()>, _node: NodeId, _is_group_hovered: bool, global_pos: Vec2) {
+    fn paint(&self, renderer: &mut dyn Renderer, taffy: &TaffyTree<()>, node: NodeId, _is_group_hovered: bool, global_pos: Vec2) {
+        let layout = taffy.layout(node).unwrap();
         let text_color = Color::Semantic("text".into(), None).to_rgba();
-        renderer.draw_text(&self.logic.text, global_pos.x, global_pos.y, 14.0, text_color, TextAlign::Left);
+        renderer.draw_text(&self.logic.text, global_pos.x, global_pos.y, layout.size.width, 14.0, text_color, TextAlign::Left);
     }
 }
 

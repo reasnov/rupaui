@@ -13,15 +13,15 @@ pub mod theme_switcher;
 pub mod viewport;
 
 pub use brand::Brand;
-pub use button::Button;
+pub use button::{Button, CloseButton, ButtonGroup};
 pub use content::{Card, Table, Accordion};
 pub use control_flow::{Show, ForEach};
 pub use feedback::{Progress, Skeleton, Badge, Spinner, Alert};
 pub use forms::{Label, Checkbox, Radio, Select, Switch, Input};
-pub use layout::{Container, Section, VStack, HStack};
+pub use layout::{Container, Section, VStack, HStack, Row, Col};
 pub use navigation::{Navbar, Tabs, Breadcrumb};
 pub use overlay::{Modal, Tooltip};
-pub use svg::Svg;
+pub use svg::{Svg, Icon, SvgCanvas};
 pub use text::Text;
 pub use theme_switcher::ThemeSwitcher;
 pub use viewport::Viewport;

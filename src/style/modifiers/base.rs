@@ -16,6 +16,52 @@ where
     }
 }
 
+impl StyleModifier for Style {
+    fn apply(&self, style: &mut Style) {
+        *style = self.clone();
+    }
+}
+
+// --- Tuple Implementations for Multi-Modifiers ---
+
+impl<A, B> StyleModifier for (A, B) 
+where A: StyleModifier, B: StyleModifier {
+    fn apply(&self, style: &mut Style) {
+        self.0.apply(style);
+        self.1.apply(style);
+    }
+}
+
+impl<A, B, C> StyleModifier for (A, B, C) 
+where A: StyleModifier, B: StyleModifier, C: StyleModifier {
+    fn apply(&self, style: &mut Style) {
+        self.0.apply(style);
+        self.1.apply(style);
+        self.2.apply(style);
+    }
+}
+
+impl<A, B, C, D> StyleModifier for (A, B, C, D) 
+where A: StyleModifier, B: StyleModifier, C: StyleModifier, D: StyleModifier {
+    fn apply(&self, style: &mut Style) {
+        self.0.apply(style);
+        self.1.apply(style);
+        self.2.apply(style);
+        self.3.apply(style);
+    }
+}
+
+impl<A, B, C, D, E> StyleModifier for (A, B, C, D, E) 
+where A: StyleModifier, B: StyleModifier, C: StyleModifier, D: StyleModifier, E: StyleModifier {
+    fn apply(&self, style: &mut Style) {
+        self.0.apply(style);
+        self.1.apply(style);
+        self.2.apply(style);
+        self.3.apply(style);
+        self.4.apply(style);
+    }
+}
+
 /// A trait for components that can be styled.
 /// This provides the glue between the component and the modifier system.
 pub trait Stylable: Component + Sized {
