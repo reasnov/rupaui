@@ -57,7 +57,8 @@ impl Batcher {
 
     pub fn add_rect(&mut self, vertices: [Vertex; 4]) {
         if self.vertices.len() + 4 > self.max_batch_size * 4 {
-            return; // TODO: Flush automatically or return error
+            log::warn!("Batcher: Max batch size reached. Automatic flushing is currently unsupported.");
+            return;
         }
         let base_idx = self.vertices.len() as u32;
         self.vertices.extend_from_slice(&vertices);

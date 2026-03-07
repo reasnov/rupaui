@@ -1,9 +1,8 @@
 use crate::style::utilities::spacing::Spacing;
-
-pub enum Cursor { Default, Pointer, Text, Move, Wait, Help, NotAllowed, Crosshair }
+use crate::platform::events::CursorIcon;
 
 pub struct Interactivity {
-    pub cursor: Cursor,
+    pub cursor: CursorIcon,
     pub pointer_events: bool,
     pub user_select: bool,
     pub touch_action: String,
@@ -14,7 +13,7 @@ pub struct Interactivity {
 impl Default for Interactivity {
     fn default() -> Self {
         Self {
-            cursor: Cursor::Default,
+            cursor: CursorIcon::Default,
             pointer_events: true,
             user_select: true,
             touch_action: "auto".to_string(),

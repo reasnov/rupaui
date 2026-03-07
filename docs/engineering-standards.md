@@ -33,7 +33,8 @@ Standard for all UI Elements in `src/elements/`.
 
 ### The Agnostic Bridge
 - Layers 3 through 9 communicate using a "Universal Language" (`InputEvent`, `trait Renderer`).
-- Implementation details are isolated in Layer 1 (HAL) and Layer 2 (Rendering).
+- Implementation details are isolated in Layer 1 (Platform Integration) and Layer 2 (Rendering).
+
 
 ---
 
@@ -50,11 +51,20 @@ Standard for all UI Elements in `src/elements/`.
 
 ### Modularity
 - **One Module, One Responsibility:** Avoid "God Files". If a module exceeds its scope, break it down into sub-modules (e.g., `src/style/modifiers/` split by functional domain).
+- **Clean Indices (`mod.rs`):** All `mod.rs` files MUST be clean indices. They should only contain module declarations (`pub mod ...`) and re-exports (`pub use ...`). NO implementation logic, constants, or traits should be defined directly within a `mod.rs` file.
 - **Flattened Re-exports:** Use `pub use` in `mod.rs` to keep user imports shallow (1-level deep via `prelude`).
 
 ---
 
-## 4. State & Reactivity Standards
+## 4. Error Handling & Diagnostics
+
+- **No Silent Failures:** Errors must be handled or explicitly reported. Avoid `unwrap()` unless in test contexts or logically impossible states.
+- **Unsupported Error Convention:** For features that are partially implemented or not yet supported on a specific platform, ALWAYS return or report `Error::Unsupported(feature_name)`. DO NOT use silent `TODO` comments or `eprintln` placeholders. This ensures that technical debt is trackable via the framework's Diagnostic Center.
+- **Contextual Errors:** Use the `thiserror` crate to provide meaningful, typed error categories.
+
+---
+
+## 5. State & Reactivity Standards
 
 - **Signal-First Mutation:** Any state that affects the visual output must be wrapped in a `Signal<T>`.
 - **Fine-Grained Updates:** Components should only be marked as `dirty` if a signal they depend on changes.
